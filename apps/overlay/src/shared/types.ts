@@ -8,7 +8,7 @@ export interface Rect {
   height: number;
 }
 
-export type WidgetId = "guide" | "status";
+export type WidgetId = "guide" | "gems" | "status";
 
 /**
  * Widget placement, relative to the game client area so a layout survives

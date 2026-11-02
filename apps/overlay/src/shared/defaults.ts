@@ -28,6 +28,8 @@ export const DEFAULT_SETTINGS: Settings = {
 export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {
   // Right side, below the minimap area, out of the way of the life globe.
   guide: { x: 0.74, y: 0.3, width: 0.24, visible: true, opacity: 0.92, scale: 1 },
+  // Left side, below the party/buff area. Shown only when a build is imported.
+  gems: { x: 0.005, y: 0.22, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   status: { x: 0.005, y: 0.005, width: 0.18, visible: true, opacity: 0.85, scale: 1 },
 };
 

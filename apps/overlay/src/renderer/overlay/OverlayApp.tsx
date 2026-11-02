@@ -31,6 +31,11 @@ export function OverlayApp() {
       <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} onChange={(l) => save("guide", l)}>
         <GuideWidget state={state} guide={guide} />
       </Widget>
+      {guide?.build && (
+        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
+          <GemLinks guide={guide} />
+        </Widget>
+      )}
       <Widget id="status" title="Status" layout={layoutOf("status")} editing={editing} onChange={(l) => save("status", l)}>
         <StatusWidget state={state} editing={editing} />
       </Widget>
@@ -176,6 +181,42 @@ function LevelCheck({ charLevel, areaLevel }: { charLevel: number; areaLevel: nu
     <span className="warn small" title="Monsters here are much stronger than you">
       you're {-diff} levels under: careful
     </span>
+  );
+}
+
+/** The build's skill groups: main gem(s) first, then supports, coloured by attribute. */
+function GemLinks({ guide }: { guide: GuideRender }) {
+  const [group, setGroup] = useState(0);
+  const groups = guide.build?.gemLinks ?? [];
+  if (!groups.length) return <div className="muted small">The imported build has no gem links.</div>;
+  const g = groups[Math.min(group, groups.length - 1)];
+  const gem = (id: string) => guide.gems[id] ?? { name: id.split("/").at(-1) ?? id, colour: "#c8c8c8", isSupport: false };
+  const where = (link: { quests: { questId: string }[] }) =>
+    link.quests.length ? `buy after ${guide.quests[link.quests[0].questId]?.name ?? link.quests[0].questId}` : "not sold to your class";
+  return (
+    <div className="gem-links">
+      <div className="gem-head">
+        <span className="muted small">{guide.build?.ascendancy ?? guide.build?.className}</span>
+        {groups.length > 1 && (
+          <Interactive className="gem-nav">
+            <button onClick={() => setGroup((group - 1 + groups.length) % groups.length)}>◀</button>
+            <span className="small">
+              {group + 1}/{groups.length}
+            </span>
+            <button onClick={() => setGroup((group + 1) % groups.length)}>▶</button>
+          </Interactive>
+        )}
+      </div>
+      <div className="gem-title">{g.title}</div>
+      <ul className="gems">
+        {[...g.primaryGems, ...g.secondaryGems].map((l, i) => (
+          <li key={l.id} className={i < g.primaryGems.length ? "primary" : "support"} title={where(l)}>
+            <span className="gem-dot" style={{ background: gem(l.id).colour }} />
+            {gem(l.id).name}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

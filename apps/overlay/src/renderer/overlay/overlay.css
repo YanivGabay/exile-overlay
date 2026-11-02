@@ -123,3 +123,11 @@ html, body.overlay-body, #root {
 .step-preview { opacity: 0.6; }
 .nothing { padding: 2px 0 2px 8px; }
 .picker { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 4px 0; }
+.gem-head { display: flex; justify-content: space-between; align-items: center; }
+.gem-nav { display: inline-flex; gap: 4px; align-items: center; }
+.gem-nav button { padding: 0 5px; font-size: 0.85em; }
+.gem-title { color: var(--gold); font-weight: 600; margin: 2px 0; }
+.gems { list-style: none; margin: 0; padding: 0; }
+.gems li { display: flex; align-items: center; gap: 6px; line-height: 1.5; }
+.gems li.support { padding-left: 12px; color: var(--muted); }
+.gem-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
