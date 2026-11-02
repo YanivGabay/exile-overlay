@@ -58,3 +58,54 @@ describe("league notes", () => {
     expect(guide.edges).toContain("1_5_1");
   });
 });
+
+import { activeReminders, trialStatus } from "./reminders.js";
+
+describe("reminders", () => {
+  const rctx = (level: number | null, upcoming: string[] = []) => ({
+    level,
+    actOf: (id: string) => areas[id]?.act,
+    upcoming,
+    dismissed: new Set<string>(),
+  });
+  const at = (area: string) => ({ activeEdge: guide.edges.indexOf(area), completed: [] });
+  const ids = (p: { activeEdge: number; completed: string[] }, level: number | null, upcoming: string[] = []) =>
+    activeReminders(guide, p, bundle.campaign.reminders ?? [], rctx(level, upcoming)).map((r) => r.id);
+
+  it("shows the boots recipe after Mercy Mission and upgrades the tier with level", () => {
+    expect(ids(INITIAL_PROGRESS, 2)).not.toContain("ms-10");
+    const after = at("1_1_4_0"); // Flooded Depths: after Mercy Mission (Tidal Island)
+    expect(ids(after, 8)).toContain("ms-10");
+    const act2 = at("1_2_town");
+    const r = ids(act2, 13);
+    expect(r).toContain("ms-15");
+    expect(r).not.toContain("ms-10");
+  });
+
+  it("warns about Kaom's Stronghold only when it is coming and you are under level", () => {
+    const p = at("1_4_town");
+    expect(ids(p, 28, ["1_4_town", "1_4_4_3"])).toContain("level-kaom");
+    expect(ids(p, 33, ["1_4_town", "1_4_4_3"])).not.toContain("level-kaom");
+    expect(ids(p, 28, ["1_4_town"])).not.toContain("level-kaom");
+  });
+
+  it("respects dismissals", () => {
+    const p = at("1_2_town");
+    const r = activeReminders(guide, p, bundle.campaign.reminders ?? [], { ...rctx(13), dismissed: new Set(["ms-15"]) });
+    expect(r.map((x) => x.id)).not.toContain("ms-15");
+  });
+});
+
+describe("trialStatus", () => {
+  it("counts 6 normal, 3 cruel, 3 merciless trials on the league-start route", () => {
+    const t = trialStatus(guide, INITIAL_PROGRESS, (id) => areas[id]?.act);
+    expect(t.map((x) => [x.lab, x.total])).toEqual([
+      ["normal", 6],
+      ["cruel", 3],
+      ["merciless", 3],
+    ]);
+    expect(t.every((x) => x.done === 0 && !x.labReached)).toBe(true);
+    const end = trialStatus(guide, { activeEdge: guide.edges.length - 1, completed: [] }, (id) => areas[id]?.act);
+    expect(end.every((x) => x.done === x.total && x.labReached)).toBe(true);
+  });
+});

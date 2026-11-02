@@ -1,6 +1,7 @@
 import type { GuideShape, GuideProgress } from "./progress.js";
 import { stepGroups, visitedSet } from "./progress.js";
 import type { RouteData } from "./types.js";
+import type { Reminder } from "./reminders.js";
 
 /** Campaign knowledge shipped in the guide bundle (guides repo: <game>/campaign.json). */
 export interface CampaignInfo {
@@ -8,6 +9,9 @@ export interface CampaignInfo {
   banditQuest?: { questId: string; killAllPoints: number };
   respecQuests?: string[];
   resistPenalties?: { fromAct: number; total: number; text: string }[];
+  reminders?: Reminder[];
+  labs?: Partial<Record<"normal" | "cruel" | "merciless", { areaLevel: number; text: string }>>;
+  mapsChecklist?: { items: string[] };
   league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; kind?: "loot" | "plan" | "info"; source?: string; verified?: boolean }[] };
 }
 
