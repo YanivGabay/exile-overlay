@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { api } from "../common/api.js";
 import { AnyStep } from "../common/Step.js";
 import type { AppState } from "../../shared/types.js";
+import { IconBack, IconFwd, IconHere, IconMap, IconUndo } from "../common/Icons.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 
 /**
@@ -31,23 +32,23 @@ export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOp
   return (
     <Interactive className="nav">
       <button title={`Previous zone (${k.prevStep})`} onClick={() => void api.send({ type: "guideStep", delta: -1 })}>
-        ◀
+        <IconBack title="Previous zone" />
       </button>
       <button title={`Next zone (${k.nextStep})`} onClick={() => void api.send({ type: "guideStep", delta: 1 })}>
-        ▶
+        <IconFwd title="Next zone" />
       </button>
       <button
         title={`I'm here: jump to the zone you are in (${k.resync})`}
         disabled={!state.game.area}
         onClick={() => void api.send({ type: "guideResync" })}
       >
-        ⌖
+        <IconHere title="I'm here" />
       </button>
       <button title="Undo the last move" disabled={!canUndo} onClick={() => void api.send({ type: "guideUndo" })}>
-        ↶
+        <IconUndo title="Undo" />
       </button>
       <button title="Route map: pick where you are" className={mapOpen ? "on" : ""} onClick={onToggleMap}>
-        ☰
+        <IconMap title="Route map" />
       </button>
     </Interactive>
   );
@@ -87,7 +88,7 @@ export function RouteMap({ guide, active, onPick }: { guide: GuideRender; active
                 onPick();
               }}
             >
-              <span className={`chip ${area?.isTown ? "chip-town" : "chip-area"}`}>{area?.name ?? guide.edges[g.edge]}</span>
+              <span className={`tk ${area?.isTown ? "tk-town" : "tk-area"}`}>{area?.name ?? guide.edges[g.edge]}</span>
               {detail.map((d) => (
                 <span key={d.id} className="map-detail">
                   <AnyStep entry={d} guide={guide} />

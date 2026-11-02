@@ -16,6 +16,7 @@ import {
   type GameData,
   type GuideProgress,
   type PobBuild,
+  type CampaignInfo,
 } from "@exile-overlay/route-engine";
 import { baseClassOf, type LogEvent } from "@exile-overlay/log-watcher";
 import type { AppStateStore } from "./app-state.js";
@@ -32,6 +33,7 @@ export interface GuideBundle {
   builtAt: string;
   routes: string[];
   data: GameData.Bundle;
+  campaign?: CampaignInfo;
 }
 
 /** Key used for progress before the log tells us the character's name. */
@@ -416,6 +418,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
           }
         : null,
       buildError: this.buildError,
+      campaign: this.bundle.campaign ?? null,
     };
     this.emit("guide", this.render);
   }

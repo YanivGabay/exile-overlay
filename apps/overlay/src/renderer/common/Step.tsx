@@ -1,6 +1,7 @@
 import { DIRECTION_ARROWS, DIRECTION_WORDS, type Fragments, type GuideStep, type RouteData } from "@exile-overlay/route-engine";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Interactive } from "../overlay/Navigation.js";
+import { IconGo, IconKill, IconPortal, IconQuest, IconTown, IconTrial, IconWaypoint } from "./Icons.js";
 
 /**
  * Renders one route step as readable text with small inline "chips" for the
@@ -18,57 +19,104 @@ export function StepText({ step, guide }: { step: RouteData.FragmentStep; guide:
 }
 
 function Fragment({ part, guide }: { part: Fragments.AnyFragment; guide: GuideRender }) {
-  if (typeof part === "string") return <>{part}</>;
+  // The route writes "➞" before zone changes; the enter glyph replaces it.
+  if (typeof part === "string") return <>{part.replace(/➞\s*/g, "")}</>;
   const area = (id: string) => guide.areas[id]?.name ?? id;
+  const zone = (id: string) => (
+    <span className={`tk ${guide.areas[id]?.isTown ? "tk-town" : "tk-area"}`}>{area(id)}</span>
+  );
   switch (part.type) {
     case "kill":
-      return <span className="chip chip-kill">{part.value}</span>;
-    case "arena":
-      return <span className="chip chip-area">{part.value}</span>;
-    case "area":
-      return <span className="chip chip-area">{area(part.areaId)}</span>;
-    case "enter":
       return (
-        <span className={`chip ${guide.areas[part.areaId]?.isTown ? "chip-town" : "chip-area"}`}>
-          {area(part.areaId)}
+        <span className="tk tk-kill">
+          <IconKill /> {part.value}
         </span>
       );
+    case "arena":
+      return <span className="tk tk-area">{part.value}</span>;
+    case "area":
+      return zone(part.areaId);
+    case "enter":
+      return (
+        <>
+          <span className="tk-go">
+            <IconGo />
+          </span>{" "}
+          {zone(part.areaId)}
+        </>
+      );
     case "logout":
-      return <span className="chip chip-town">Logout → {area(part.areaId)}</span>;
+      return (
+        <span className="tk tk-town">
+          <IconTown /> Log out to {area(part.areaId)}
+        </span>
+      );
     case "waypoint":
-      return <span className="chip chip-wp">waypoint</span>;
+      return (
+        <span className="tk tk-wp">
+          <IconWaypoint /> waypoint
+        </span>
+      );
     case "waypoint_use":
-      return <span className="chip chip-wp">Waypoint → {area(part.dstAreaId)}</span>;
+      return (
+        <span className="tk tk-wp">
+          <IconWaypoint /> Waypoint to {area(part.dstAreaId)}
+        </span>
+      );
     case "waypoint_get":
-      return <span className="chip chip-wp">waypoint</span>;
+      return (
+        <span className="tk tk-wp">
+          <IconWaypoint /> waypoint
+        </span>
+      );
     case "portal_set":
-      return <span className="chip chip-portal">portal</span>;
+      return (
+        <span className="tk tk-wp">
+          <IconPortal /> portal
+        </span>
+      );
     case "portal_use":
-      return <span className="chip chip-portal">portal → {area(part.dstAreaId)}</span>;
+      return (
+        <span className="tk tk-wp">
+          <IconPortal /> portal to {area(part.dstAreaId)}
+        </span>
+      );
     case "quest":
-      return <span className="chip chip-quest">{guide.quests[part.questId]?.name ?? part.questId}</span>;
+      return (
+        <span className="tk tk-quest">
+          <IconQuest /> {guide.quests[part.questId]?.name ?? part.questId}
+        </span>
+      );
     case "quest_text":
-      return <span className="chip chip-quest-item">{part.value}</span>;
+      return <span className="tk tk-quest-item">{part.value}</span>;
     case "generic":
-      return <span className="chip chip-generic">{part.value}</span>;
+      return <span className="tk tk-generic">{part.value}</span>;
     case "reward_quest":
-      return <span className="chip chip-reward">Take {part.item}</span>;
+      return <span className="tk tk-reward">Take {part.item}</span>;
     case "reward_vendor":
       return (
-        <span className="chip chip-reward">
+        <span className="tk tk-reward">
           Buy {part.item}
           {part.cost ? ` (${part.cost})` : ""}
         </span>
       );
     case "trial":
-      return <span className="chip chip-trial">Trial of Ascendancy</span>;
+      return (
+        <span className="tk tk-trial">
+          <IconTrial /> Trial of Ascendancy
+        </span>
+      );
     case "ascend":
-      return <span className="chip chip-trial">Labyrinth ({part.version})</span>;
+      return (
+        <span className="tk tk-trial">
+          <IconTrial /> {part.version[0].toUpperCase() + part.version.slice(1)} Labyrinth
+        </span>
+      );
     case "crafting":
-      return <span className="chip chip-craft">crafting recipe: {part.crafting_recipes.join(", ")}</span>;
+      return <span className="tk tk-craft">crafting recipe ({part.crafting_recipes.join(", ")})</span>;
     case "dir":
       return (
-        <span className="chip chip-dir" title={DIRECTION_WORDS[part.dirIndex]}>
+        <span className="tk tk-dir" title={DIRECTION_WORDS[part.dirIndex]}>
           {DIRECTION_ARROWS[part.dirIndex]} {DIRECTION_WORDS[part.dirIndex]}
         </span>
       );
@@ -81,11 +129,11 @@ function CopyChip({ text }: { text: string }) {
   return (
     <Interactive className="inline">
     <button
-      className="chip chip-copy"
+      className="copy-btn"
       title="Copy the vendor search text"
       onClick={() => void navigator.clipboard.writeText(text)}
     >
-      ⧉ search
+      copy search
     </button>
     </Interactive>
   );
@@ -98,7 +146,7 @@ export function GemStepText({ step, guide }: { step: RouteData.GemStep; guide: G
   return (
     <>
       {verb}{" "}
-      <span className="chip chip-gem" style={{ borderColor: gem?.colour, color: gem?.colour }}>
+      <span className="tk tk-gem" style={{ color: gemColour(gem?.colour) }}>
         {name}
         {step.count > 1 ? ` ×${step.count}` : ""}
       </span>
@@ -113,4 +161,18 @@ export function AnyStep({ entry, guide }: { entry: GuideStep; guide: GuideRender
   ) : (
     <GemStepText step={entry.step} guide={guide} />
   );
+}
+
+/** Game data colours are pure RGB; soften them so they read on the dark panel. */
+export function gemColour(raw: string | undefined): string {
+  switch ((raw ?? "").toLowerCase()) {
+    case "#ff3333":
+      return "#e5705f";
+    case "#33ff33":
+      return "#7fcf7a";
+    case "#3333ff":
+      return "#7fa2ff";
+    default:
+      return "#d8d0c0";
+  }
 }

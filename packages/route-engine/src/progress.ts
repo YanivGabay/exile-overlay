@@ -307,8 +307,15 @@ export interface ZoneCard {
   /** The step that leaves for the next zone. */
   leave: GuideStep | null;
   nextAreaId: string | null;
-  /** The first things to do in the next zone. */
+  /** The first things to do in the next zone with tasks. */
   nextTodo: GuideStep[];
+  /**
+   * Zones to pass through, in order, up to and including the zone where
+   * `nextTodo` happens (skips pass-through zones with nothing to do).
+   */
+  path: string[];
+  /** How the player leaves this zone: on foot, by waypoint, portal or logout. */
+  travel: "walk" | "waypoint" | "portal" | "logout";
   fraction: number;
 }
 
@@ -328,10 +335,27 @@ export function zoneCard(guide: GuideShape, progress: GuideProgress, previewCoun
 
   const nextGroup = edge + 1 < guide.edges.length ? groupSteps(guide, edge + 1) : [];
   const leave = nextGroup[0] ?? null;
-  const nextTodo = (leave && isMovementStep(leave.step) ? nextGroup.slice(1) : nextGroup.slice(leave ? 1 : 0)).slice(
-    0,
-    previewCount,
-  );
+  // Look ahead through pass-through zones (nothing to do there) to the next real task.
+  const path: string[] = [];
+  let nextTodo: GuideStep[] = [];
+  for (let e = edge + 1; e < guide.edges.length && path.length < 4; e++) {
+    path.push(guide.edges[e]);
+    const g = groupSteps(guide, e);
+    const tasks = g[0] && isMovementStep(g[0].step) ? g.slice(1) : g.slice(1);
+    if (tasks.length) {
+      nextTodo = tasks.slice(0, previewCount);
+      break;
+    }
+  }
+  let travel: ZoneCard["travel"] = "walk";
+  if (leave && leave.step.type === "fragment_step") {
+    for (const part of leave.step.parts) {
+      if (typeof part === "string") continue;
+      if (part.type === "waypoint_use") travel = "waypoint";
+      else if (part.type === "portal_use") travel = "portal";
+      else if (part.type === "logout") travel = "logout";
+    }
+  }
   return {
     edge,
     areaId: guide.edges[edge],
@@ -341,6 +365,8 @@ export function zoneCard(guide: GuideShape, progress: GuideProgress, previewCoun
     leave,
     nextAreaId: guide.edges[edge + 1] ?? null,
     nextTodo,
+    path,
+    travel,
     fraction: guide.edges.length > 1 ? edge / (guide.edges.length - 1) : 1,
   };
 }

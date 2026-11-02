@@ -140,3 +140,14 @@ describe("matchCharacter", () => {
     expect(matchCharacter(guide, chars, "1_4_town", ctxAct)).toBeNull();
   });
 });
+
+describe("zoneCard look-ahead", () => {
+  it("skips the pass-through Coast and previews Hailrake, by waypoint", () => {
+    const sub = guide.edges.findIndex((e, i) => e === "1_1_4_1" && guide.edges[i + 1] === "1_1_2");
+    const card = zoneCard(guide, { activeEdge: sub, completed: [] });
+    expect(card.travel).toBe("waypoint");
+    expect(card.path).toEqual(["1_1_2", "1_1_2a"]);
+    const text = card.nextTodo.map((s) => (s.step.type === "fragment_step" ? fragmentsToText(s.step.parts, bundle.data) : "")).join(" ");
+    expect(text).toMatch(/Hailrake/);
+  });
+});
