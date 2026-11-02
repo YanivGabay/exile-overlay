@@ -230,7 +230,9 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   selectCharacter(name: string) {
-    this.state.replaceSettings({ ...this.state.settings, activeCharacter: name });
+    this.paused = false;
+    this.state.set("tracking", null);
+    this.state.replaceSettings({ ...this.state.settings, activeCharacter: name === DEFAULT_CHARACTER ? null : name });
   }
 
   setPob(code: string | null) {
@@ -289,9 +291,11 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         this.notice("paused", null, e.areaId, e.time);
         return;
       }
+      const wasPaused = this.paused;
       this.paused = false;
-      if (match !== active) {
-        this.state.replaceSettings({ ...this.state.settings, activeCharacter: match === DEFAULT_CHARACTER ? null : match });
+      if (match !== active || wasPaused) {
+        if (match !== active)
+          this.state.replaceSettings({ ...this.state.settings, activeCharacter: match === DEFAULT_CHARACTER ? null : match });
         this.notice("switched", match, e.areaId, e.time);
       }
     }
@@ -301,7 +305,8 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     const moved = progress.activeEdge !== before;
     // Detours keep the previous Undo available; moves replace it.
     const prev = this.state.get().tracking;
-    const keepNotice = prev?.kind === "character" && outcome.kind === "same";
+    // Keep "now following X" visible when the zone simply confirms it.
+    const keepNotice = prev?.kind === "character" && prev.event !== "paused" && outcome.kind === "same";
     if (!keepNotice)
       this.state.set("tracking", { ...outcome, at: e.time, undoEdge: moved ? before : prev?.undoEdge ?? null });
     this.saveProgress({ ...progress, completed: progress.completed });

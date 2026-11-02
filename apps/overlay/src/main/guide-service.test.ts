@@ -71,6 +71,16 @@ describe("GuideService with log events", () => {
     t.feed(t.logout(), t.enter("1_1_3"));
     expect(t.state.get().settings.activeCharacter).toBe("Alt");
     expect(t.active().progress.activeEdge).toBe(altEdge);
+    expect(t.state.get().tracking).toMatchObject({ kind: "character", event: "switched", name: "Alt" });
+  });
+
+  it("clears the pause when the same character comes back", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Solo", "Witch", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    t.feed(t.logout(), t.enter("2_6_town"));
+    expect(t.state.get().tracking).toMatchObject({ event: "paused" });
+    t.feed(t.logout(), t.enter("1_1_2"));
+    expect(t.state.get().tracking).toMatchObject({ kind: "character", event: "switched", name: "Solo" });
   });
 
   it("starts a new character at the beginning", () => {

@@ -121,6 +121,10 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
       </div>
       {mapOpen && <RouteMap guide={guide} active={profile.progress.activeEdge} onPick={() => setMapOpen(false)} />}
       <TrackingBanner state={state} guide={guide} routeArea={card.areaId} />
+      {state.tracking?.kind === "character" && state.tracking.event === "paused" ? (
+        <CharacterPicker state={state} />
+      ) : (
+        <>
 
       <div className="zone">
         <span className={`zone-name ${area?.isTown ? "town" : ""}`}>{area?.name ?? card.areaId}</span>
@@ -147,6 +151,8 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
         </>
       )}
       {!card.leave && <div className="ok small">End of the route. Well done, exile.</div>}
+        </>
+      )}
 
       {guide.buildError && <div className="warn small">Build import failed: {guide.buildError}</div>}
       {reporting && <ReportBox stepId={reporting} onClose={() => setReporting(null)} />}
@@ -170,6 +176,22 @@ function LevelCheck({ charLevel, areaLevel }: { charLevel: number; areaLevel: nu
     <span className="warn small" title="Monsters here are much stronger than you">
       you're {-diff} levels under: careful
     </span>
+  );
+}
+
+/** Shown while the guide doesn't know which character is played. */
+function CharacterPicker({ state }: { state: AppState }) {
+  const chars = Object.values(state.settings.characters).sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+  return (
+    <Interactive className="picker">
+      <div className="small muted">Who are you playing?</div>
+      {chars.map((c) => (
+        <button key={c.name} onClick={() => void api.send({ type: "selectCharacter", name: c.name })}>
+          {c.name === "_default" ? "New character" : c.name}
+          {c.level ? ` · ${c.level}` : ""}
+        </button>
+      ))}
+    </Interactive>
   );
 }
 

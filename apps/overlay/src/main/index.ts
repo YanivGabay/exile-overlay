@@ -1,5 +1,6 @@
 import { BrowserWindow, app, ipcMain, shell } from "electron";
 import { join } from "node:path";
+import { writeFileSync } from "node:fs";
 import { AppStateStore } from "./app-state.js";
 import { GameLog } from "./game-log.js";
 import { GuideService } from "./guide-service.js";
@@ -147,7 +148,31 @@ app.whenReady().then(() => {
     electron: process.versions.electron,
   }));
 
-  createTray({
+  // Test hook: render the overlay offscreen and save a PNG after every change.
+  // Never touches the desktop or focus.
+  const captureDir = process.env.EXILE_OVERLAY_CAPTURE;
+  if (captureDir) {
+    const cap = new BrowserWindow({
+      show: false,
+      width: 1280,
+      height: 720,
+      backgroundColor: "#2b3a2b",
+      webPreferences: { offscreen: true, preload: PRELOAD, sandbox: true, contextIsolation: true },
+    });
+    loadPage(cap, "overlay");
+    let n = 0;
+    let timer: NodeJS.Timeout | null = null;
+    state.on("change", (s) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const img = await cap.webContents.capturePage();
+        const label = `${s.game.inGame === false ? "outOfGame" : s.tracking?.kind ?? "start"}-${s.game.area?.id ?? "none"}`;
+        writeFileSync(join(captureDir, `${String(++n).padStart(2, "0")}-${label}.png`), img.toPNG());
+      }, 700);
+    });
+  }
+
+  if (!captureDir) createTray({
     openSettings: (tab) => openSettingsWindow(tab),
     toggleEdit: () => overlay.setEditing(!state.get().overlay.editing),
     quit: () => app.quit(),
@@ -155,7 +180,7 @@ app.whenReady().then(() => {
 
   guide.start();
   void log.start();
-  if (!state.settings.firstRunDone) openSettingsWindow("setup");
+  if (!state.settings.firstRunDone && !captureDir) openSettingsWindow("setup");
 
   app.on("second-instance", () => openSettingsWindow());
   app.on("before-quit", () => {

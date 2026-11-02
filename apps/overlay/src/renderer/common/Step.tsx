@@ -36,15 +36,15 @@ function Fragment({ part, guide }: { part: Fragments.AnyFragment; guide: GuideRe
     case "logout":
       return <span className="chip chip-town">Logout → {area(part.areaId)}</span>;
     case "waypoint":
-      return <span className="chip chip-wp">Waypoint</span>;
+      return <span className="chip chip-wp">waypoint</span>;
     case "waypoint_use":
       return <span className="chip chip-wp">Waypoint → {area(part.dstAreaId)}</span>;
     case "waypoint_get":
-      return <span className="chip chip-wp">Get waypoint</span>;
+      return <span className="chip chip-wp">waypoint</span>;
     case "portal_set":
-      return <span className="chip chip-portal">Place a portal</span>;
+      return <span className="chip chip-portal">portal</span>;
     case "portal_use":
-      return <span className="chip chip-portal">Portal → {area(part.dstAreaId)}</span>;
+      return <span className="chip chip-portal">portal → {area(part.dstAreaId)}</span>;
     case "quest":
       return <span className="chip chip-quest">{guide.quests[part.questId]?.name ?? part.questId}</span>;
     case "quest_text":
@@ -65,7 +65,7 @@ function Fragment({ part, guide }: { part: Fragments.AnyFragment; guide: GuideRe
     case "ascend":
       return <span className="chip chip-trial">Labyrinth ({part.version})</span>;
     case "crafting":
-      return <span className="chip chip-craft">Crafting: {part.crafting_recipes.join(", ")}</span>;
+      return <span className="chip chip-craft">crafting recipe: {part.crafting_recipes.join(", ")}</span>;
     case "dir":
       return (
         <span className="chip chip-dir" title={DIRECTION_WORDS[part.dirIndex]}>

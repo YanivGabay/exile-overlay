@@ -122,3 +122,4 @@ html, body.overlay-body, #root {
 .step-leave { border-left-color: var(--gold); }
 .step-preview { opacity: 0.6; }
 .nothing { padding: 2px 0 2px 8px; }
+.picker { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin: 4px 0; }
