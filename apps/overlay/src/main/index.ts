@@ -15,6 +15,9 @@ import { DEFAULT_WIDGET_LAYOUT } from "../shared/defaults.js";
 const DEFAULT_GUIDE_URL: string | null = null;
 const GUIDES_ISSUE_URL = "https://github.com/YanivGabay/exile-overlay-guides/issues/new";
 
+// Test hooks: a separate settings folder and a fixed log file, so tests never touch real settings.
+if (process.env.EXILE_OVERLAY_USERDATA) app.setPath("userData", process.env.EXILE_OVERLAY_USERDATA);
+
 if (!app.requestSingleInstanceLock()) app.quit();
 // Windows occlusion tracking can stop painting an always-on-top transparent window.
 app.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
@@ -31,6 +34,7 @@ app.whenReady().then(() => {
   };
   // For testing without the game: attach to any window by its exact title.
   if (process.env.EXILE_OVERLAY_TARGET) initial.settings.game.targetTitle = process.env.EXILE_OVERLAY_TARGET;
+  if (process.env.EXILE_OVERLAY_LOG) initial.settings.game.clientLogPath = process.env.EXILE_OVERLAY_LOG;
   const state = new AppStateStore(initial, store);
 
   const snapshot = app.isPackaged
