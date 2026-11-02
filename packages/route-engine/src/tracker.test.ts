@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { compileGuide, INITIAL_PROGRESS, trackArea, visitsOf, type GameData, type GuideProgress } from "./index.js";
+import { compileGuide, fragmentsToText, INITIAL_PROGRESS, isMovementStep, matchCharacter, trackArea, visitsOf, zoneCard, type GameData, type GuideProgress } from "./index.js";
 
 const bundle = JSON.parse(
   readFileSync(new URL("../../../guides-snapshot/poe1.json", import.meta.url), "utf8"),
@@ -86,5 +86,57 @@ describe("visitsOf", () => {
     const ordered = visitsOf(guide, "1_1_2", mid);
     expect(new Set(ordered)).toEqual(new Set(coastVisits));
     expect(Math.abs(ordered[0] - mid)).toBeLessThanOrEqual(Math.abs(ordered[1] - mid));
+  });
+});
+
+describe("zoneCard", () => {
+  it("explains the waypoint visit to The Coast: go to Tidal Island, kill Hailrake", () => {
+    const visit = guide.edges.findIndex((e, i) => e === "1_1_2" && guide.edges[i + 1] === "1_1_2a");
+    expect(visit).toBeGreaterThan(0);
+    const card = zoneCard(guide, { activeEdge: visit, completed: [] });
+    expect(card.areaId).toBe("1_1_2");
+    expect(card.todo).toEqual([]);
+    expect(card.nextAreaId).toBe("1_1_2a");
+    const preview = card.nextTodo.map((s) => (s.step.type === "fragment_step" ? fragmentsToText(s.step.parts, bundle.data) : ""));
+    expect(preview.join(" ")).toMatch(/Hailrake/);
+  });
+
+  it("lists tasks in the zone and hides the arrival arrow", () => {
+    const mud = guide.edges.indexOf("1_1_3");
+    const card = zoneCard(guide, { activeEdge: mud, completed: [] });
+    const todo = card.todo.map((s) => (s.step.type === "fragment_step" ? fragmentsToText(s.step.parts, bundle.data) : ""));
+    expect(todo[0]).toMatch(/Glyph/);
+    expect(card.nextAreaId).toBe("1_1_4_1");
+  });
+
+  it("recognises pure movement steps", () => {
+    const arrival = guide.steps.find((s) => s.edgeIndex === 1)!;
+    expect(isMovementStep(arrival.step)).toBe(true);
+    expect(isMovementStep(guide.steps[0].step)).toBe(false);
+  });
+});
+
+describe("matchCharacter", () => {
+  const ctxAct = { ...ctx, actOf: (id: string) => bundle.data.Areas[id]?.act };
+  const at = (edge: number) => ({ activeEdge: edge, completed: [] });
+  const act6Town = guide.edges.indexOf("2_6_town");
+  const coast = guide.edges.indexOf("1_1_2");
+  const chars = [
+    { name: "Main", progress: at(act6Town), lastSeen: "2026-11-02T10:00:00Z" },
+    { name: "Alt", progress: at(coast), lastSeen: "2026-11-01T10:00:00Z" },
+  ];
+
+  it("picks the character whose position explains the zone", () => {
+    expect(matchCharacter(guide, chars, "2_6_town", ctxAct)).toBe("Main");
+    expect(matchCharacter(guide, chars, "1_1_town", ctxAct)).toBe("Alt");
+    expect(matchCharacter(guide, chars, "1_1_3", ctxAct)).toBe("Alt");
+  });
+
+  it("recognises a brand-new character", () => {
+    expect(matchCharacter(guide, chars, "1_1_1", ctxAct)).toBe("new");
+  });
+
+  it("returns null when nobody fits", () => {
+    expect(matchCharacter(guide, chars, "1_4_town", ctxAct)).toBeNull();
   });
 });

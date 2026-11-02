@@ -5,7 +5,7 @@ export interface GuideRender {
   version: string;
   steps: GuideStep[];
   edges: string[];
-  areas: Record<string, { name: string; act: number; isTown: boolean }>;
+  areas: Record<string, { name: string; act: number; isTown: boolean; level: number }>;
   quests: Record<string, { name: string }>;
   /** Gems referenced by the imported build. */
   gems: Record<string, { name: string; colour: string; isSupport: boolean }>;

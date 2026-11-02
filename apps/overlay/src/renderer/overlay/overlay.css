@@ -113,3 +113,12 @@ html, body.overlay-body, #root {
 .map-row.past { opacity: 0.55; }
 .map-detail { color: var(--muted); font-size: 0.85em; }
 .map-detail .chip { font-size: 0.95em; }
+.zone { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
+.zone-name { font-size: 1.25em; font-weight: 600; color: var(--chip-area); }
+.zone-name.town { color: var(--chip-town); }
+.then-label { margin-top: 6px; color: var(--gold); font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.06em; }
+.then-label .chip { text-transform: none; letter-spacing: 0; font-size: 1.1em; }
+.step-todo { border-left-color: var(--gold-dim); }
+.step-leave { border-left-color: var(--gold); }
+.step-preview { opacity: 0.6; }
+.nothing { padding: 2px 0 2px 8px; }

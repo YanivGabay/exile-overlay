@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { viewAt } from "@exile-overlay/route-engine";
+import { isMovementStep, zoneCard, type GuideStep, type RouteData } from "@exile-overlay/route-engine";
 import { activeProfile, api, useAppState, useGuide } from "../common/api.js";
-import { AnyStep } from "../common/Step.js";
+import { AnyStep, StepText } from "../common/Step.js";
 import { DEFAULT_WIDGET_LAYOUT, resolutionKey } from "../../shared/defaults.js";
 import type { AppState, WidgetId, WidgetLayout } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
@@ -15,6 +15,8 @@ export function OverlayApp() {
   const { overlay } = state;
   const editing = overlay.editing;
   if (overlay.hidden && !editing) return null;
+  // Login screen and character select: show nothing (unless editing the layout).
+  if (state.game.inGame === false && !editing) return null;
 
   const bounds = overlay.bounds;
   const res = bounds ? resolutionKey(bounds.width, bounds.height) : "unknown";
@@ -57,14 +59,31 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
   const { view: mode, showHints } = state.settings.guide;
   const [reporting, setReporting] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
-  const view = useMemo(() => (guide ? viewAt(guide, profile.progress, mode === "compact" ? 2 : 4) : null), [guide, profile.progress, mode]);
+  const card = useMemo(
+    () => (guide ? zoneCard(guide, profile.progress, mode === "compact" ? 1 : 3) : null),
+    [guide, profile.progress, mode],
+  );
 
   if (state.guide.state === "error") return <div className="warn">{state.guide.message}</div>;
-  if (!guide || !view) return <div className="muted">Loading guide…</div>;
+  if (!guide || !card) return <div className="muted">Loading guide…</div>;
   const done = new Set(profile.progress.completed);
   const editing = state.overlay.editing;
+  const area = guide.areas[card.areaId];
+  const nextArea = card.nextAreaId ? guide.areas[card.nextAreaId] : null;
+  const level = profile.level ?? state.game.character?.level ?? null;
 
-  const stepRow = (entry: (typeof view.current)[number], kind: "current" | "next" | "upcoming") => (
+  const hintList = (subs: RouteData.FragmentStep[]) =>
+    showHints && mode !== "compact" && subs.length > 0 ? (
+      <ul className="hints">
+        {subs.map((sub, i) => (
+          <li key={i}>
+            <StepText step={sub} guide={guide} />
+          </li>
+        ))}
+      </ul>
+    ) : null;
+
+  const stepRow = (entry: GuideStep, kind: "todo" | "leave" | "preview") => (
     <li
       key={entry.id}
       className={`step step-${kind} ${done.has(entry.id) ? "done" : ""} ${entry.step.type === "gem_step" ? "gem" : ""}`}
@@ -85,52 +104,72 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
           </button>
         )}
       </div>
-      {showHints && mode !== "compact" && entry.step.type === "fragment_step" && entry.step.subSteps.length > 0 && (
-        <ul className="hints">
-          {entry.step.subSteps.map((sub, i) => (
-            <li key={i}>
-              <AnyStep entry={{ ...entry, step: sub }} guide={guide} />
-            </li>
-          ))}
-        </ul>
-      )}
+      {kind !== "preview" && entry.step.type === "fragment_step" && hintList(entry.step.subSteps)}
     </li>
   );
 
-  const current = mode === "compact" ? view.current.filter((s) => !done.has(s.id)).slice(0, 3) : view.current;
+  const todo = mode === "compact" ? card.todo.filter((s) => !done.has(s.id)).slice(0, 3) : card.todo;
 
   return (
     <div className="guide">
       <div className="guide-head">
-        <span className="act">{view.sectionName}</span>
-        <span className="progress-bar" title={`${Math.round(view.fraction * 100)}% of the campaign`}>
-          <span style={{ width: `${view.fraction * 100}%` }} />
+        <span className="act">{card.sectionName}</span>
+        <span className="progress-bar" title={`${Math.round(card.fraction * 100)}% of the campaign`}>
+          <span style={{ width: `${card.fraction * 100}%` }} />
         </span>
-        {profile.name !== "_default" && (
-          <span className="muted small">
-            {profile.name}
-            {profile.level ? ` · ${profile.level}` : ""}
-          </span>
-        )}
         <NavBar state={state} mapOpen={mapOpen} onToggleMap={() => setMapOpen(!mapOpen)} />
       </div>
-      {mapOpen && (
-        <RouteMap guide={guide} active={profile.progress.activeEdge} onPick={() => setMapOpen(false)} />
+      {mapOpen && <RouteMap guide={guide} active={profile.progress.activeEdge} onPick={() => setMapOpen(false)} />}
+      <TrackingBanner state={state} guide={guide} routeArea={card.areaId} />
+
+      <div className="zone">
+        <span className={`zone-name ${area?.isTown ? "town" : ""}`}>{area?.name ?? card.areaId}</span>
+        {area && !area.isTown && <span className="muted small">area level {area.level}</span>}
+        {area && level !== null && !area.isTown && <LevelCheck charLevel={level} areaLevel={area.level} />}
+      </div>
+      {hintList(card.arrivalHints)}
+
+      {todo.length > 0 ? (
+        <ul className="steps">{todo.map((s) => stepRow(s, "todo"))}</ul>
+      ) : (
+        <div className="muted small nothing">Nothing to do here. Head on.</div>
       )}
-      <TrackingBanner state={state} guide={guide} routeArea={guide.edges[profile.progress.activeEdge]} />
-      <ul className="steps">
-        {current.map((s) => stepRow(s, "current"))}
-        {view.next && (
-          <>
-            <li className="next-label">Next</li>
-            {stepRow(view.next, "next")}
-          </>
-        )}
-        {mode !== "compact" && view.upcoming.map((s) => stepRow(s, "upcoming"))}
-      </ul>
+
+      {card.leave && (
+        <>
+          <div className="then-label">
+            Then{nextArea ? <> → <span className={`chip ${nextArea.isTown ? "chip-town" : "chip-area"}`}>{nextArea.name}</span></> : null}
+          </div>
+          <ul className="steps">
+            {!isMovementStep(card.leave.step) && stepRow(card.leave, "leave")}
+            {mode !== "compact" && card.nextTodo.map((s) => stepRow(s, "preview"))}
+          </ul>
+        </>
+      )}
+      {!card.leave && <div className="ok small">End of the route. Well done, exile.</div>}
+
       {guide.buildError && <div className="warn small">Build import failed: {guide.buildError}</div>}
       {reporting && <ReportBox stepId={reporting} onClose={() => setReporting(null)} />}
     </div>
+  );
+}
+
+/**
+ * PoE1 experience penalty: no penalty while |player - area| <= 3 + floor(player / 16).
+ * Shown only when it matters.
+ */
+function LevelCheck({ charLevel, areaLevel }: { charLevel: number; areaLevel: number }) {
+  const safe = 3 + Math.floor(charLevel / 16);
+  const diff = charLevel - areaLevel;
+  if (Math.abs(diff) <= safe) return null;
+  return diff > 0 ? (
+    <span className="warn small" title="You get less experience here">
+      you're {diff} levels over: move on
+    </span>
+  ) : (
+    <span className="warn small" title="Monsters here are much stronger than you">
+      you're {-diff} levels under: careful
+    </span>
   );
 }
 
@@ -171,9 +210,25 @@ function TrackingBanner({ state, guide, routeArea }: { state: AppState; guide: G
     case "jumped":
       return (
         <div className="banner">
-          Skipped ahead to <span className="chip chip-area">{name(t.areaId)}</span>. {undo}
+          Playing out of order: now in <span className="chip chip-area">{name(t.areaId)}</span>
+          {t.skipped > 0 ? `, ${t.skipped} zone${t.skipped > 1 ? "s" : ""} left for later` : ""}. {undo}
         </div>
       );
+    case "backtracked":
+      return (
+        <div className="banner">
+          Back for <span className="chip chip-area">{name(t.areaId)}</span>, which you skipped earlier. {undo}
+        </div>
+      );
+    case "character":
+      if (t.event === "paused")
+        return (
+          <div className="banner banner-ask">
+            This looks like a different character. The guide is paused until it levels up, or pick a character in Settings.
+          </div>
+        );
+      if (t.event === "new") return <div className="banner">New character: the guide starts from the beginning.</div>;
+      return <div className="banner">Now following {t.name === "_default" ? "your character" : t.name}.</div>;
     case "ahead":
       return (
         <div className="banner banner-ask">

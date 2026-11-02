@@ -33,6 +33,16 @@ describe("parseLine", () => {
     expect(parseLine("garbage")).toBeNull();
   });
 
+  it("detects the login screen and character select", () => {
+    expect(parseLine("2026/11/02 20:11:51 ***** LOG FILE OPENING *****")).toMatchObject({ type: "outOfGame", reason: "clientStart" });
+    expect(parseLine(`${P} [INFO Client 29352] Async connecting to lon.login.pathofexile.com:20487`)).toMatchObject({
+      type: "outOfGame",
+      reason: "loginServer",
+    });
+    // Zone changes connect to the instance server, not the login server.
+    expect(parseLine(`${P} [INFO Client 29352] Connecting to instance server at 1.2.3.4:6112`)).toBeNull();
+  });
+
   it("parses the English 'entered' line", () => {
     expect(parseLine(`${P} [INFO Client 1234] : You have entered The Coast.`)).toMatchObject({
       type: "areaEntered",

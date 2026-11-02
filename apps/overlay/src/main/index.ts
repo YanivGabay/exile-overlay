@@ -29,7 +29,7 @@ app.whenReady().then(() => {
     appVersion: app.getVersion(),
     settings: store.load(),
     overlay: { attached: false, targetFocused: false, bounds: null, editing: false, hidden: false },
-    game: { logStatus: { kind: "searching" }, area: null, character: null },
+    game: { logStatus: { kind: "searching" }, inGame: null, area: null, character: null },
     guide: { state: "loading", source: null, version: null, gameVersion: null, title: null, message: null },
     tracking: null,
   };

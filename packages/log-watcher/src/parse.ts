@@ -11,6 +11,8 @@
  */
 
 export type LogEvent =
+  /** Login screen or character select: the player is not in a zone. */
+  | { type: "outOfGame"; time: string; reason: "clientStart" | "loginServer" }
   | { type: "areaGenerated"; time: string; areaId: string; areaLevel: number; seed: number }
   | { type: "levelUp"; time: string; character: string; className: string; level: number }
   | { type: "areaEntered"; time: string; areaName: string };
@@ -22,12 +24,19 @@ const LEVEL_UP = /^: (\S+) \(([A-Za-z]+)\) is now level (\d+)\s*$/;
 // English only; used for display, never for tracking.
 const ENTERED = /^: You have entered (.+?)\.\s*$/;
 
+// Written when the client starts, and when the player logs out to character select.
+const LOG_OPENING = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \*\*\*\*\* LOG FILE OPENING/;
+const LOGIN_SERVER = /^Async connecting to \S*login\.pathofexile\.com/;
+
 export function parseLine(line: string): LogEvent | null {
+  const opening = LOG_OPENING.exec(line);
+  if (opening) return { type: "outOfGame", time: opening[1], reason: "clientStart" };
   const prefix = PREFIX.exec(line);
   if (!prefix) return null;
   const time = prefix[1];
   const rest = line.slice(prefix[0].length);
 
+  if (LOGIN_SERVER.test(rest)) return { type: "outOfGame", time, reason: "loginServer" };
   let m = GENERATING.exec(rest);
   if (m) {
     return {

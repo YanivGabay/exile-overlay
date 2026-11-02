@@ -85,6 +85,8 @@ export interface OverlayStatus {
 
 export interface GameStatus {
   logStatus: LogStatus;
+  /** False on the login screen and character select; null before the log is read. */
+  inGame: boolean | null;
   area: { id: string; name: string | null; level: number } | null;
   character: { name: string; className: string | null; level: number | null } | null;
 }
@@ -109,7 +111,15 @@ export interface ManualMove {
   visits?: number;
 }
 
-export type TrackingInfo = (TrackOutcome | ManualMove) & {
+/** Which character the guide follows changed, or is unknown. */
+export interface CharacterNotice {
+  kind: "character";
+  event: "switched" | "new" | "paused";
+  name: string | null;
+  areaId: string;
+}
+
+export type TrackingInfo = (TrackOutcome | ManualMove | CharacterNotice) & {
   at: string;
   /** Route position before this move; null when nothing moved. Enables Undo. */
   undoEdge: number | null;

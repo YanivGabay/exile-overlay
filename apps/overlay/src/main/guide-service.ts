@@ -7,6 +7,7 @@ import {
   parsePobXml,
   INITIAL_PROGRESS,
   trackArea,
+  matchCharacter,
   setEdge,
   visitsOf,
   stepEdge,
@@ -65,6 +66,10 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   private render: GuideRender | null = null;
   private build: PobBuild | null = null;
   private buildError: string | null = null;
+  /** Set after a login: the next zone tells us which character is played. */
+  private identifyPending = true;
+  /** Unknown character: don't touch anyone's progress until we know who it is. */
+  private paused = false;
   private lastResync: { areaId: string; order: number[]; index: number; time: number } | null = null;
   private timer: NodeJS.Timeout | null = null;
 
@@ -232,41 +237,103 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     this.saveProfile({ ...this.profile(), pobCode: code });
   }
 
+  private trackCtx() {
+    const areas = this.bundle?.data.Areas ?? {};
+    return { isTown: (id: string) => areas[id]?.is_town_area ?? false, actOf: (id: string) => areas[id]?.act };
+  }
+
+  private notice(event: "switched" | "new" | "paused", name: string | null, areaId: string, time: string) {
+    this.state.set("tracking", { kind: "character", event, name, areaId, at: time, undoEdge: null });
+  }
+
   onLogEvent(e: LogEvent, replay: boolean) {
-    if (e.type === "levelUp") {
-      const existing = this.state.settings.characters[e.character];
-      const fromDefault =
-        !existing && this.state.settings.activeCharacter === null
-          ? this.state.settings.characters[DEFAULT_CHARACTER]
-          : undefined;
-      const profile: CharacterProfile = {
-        name: e.character,
-        className: baseClassOf(e.className) ?? e.className,
-        level: e.level,
-        // A brand-new character keeps the progress made before its first level-up.
-        progress: existing?.progress ?? fromDefault?.progress ?? INITIAL_PROGRESS,
-        pobCode: existing?.pobCode ?? fromDefault?.pobCode ?? null,
-        lastSeen: new Date().toISOString(),
-      };
-      const characters = { ...this.state.settings.characters, [e.character]: profile };
-      if (fromDefault) delete characters[DEFAULT_CHARACTER];
-      this.state.replaceSettings({ ...this.state.settings, characters, activeCharacter: e.character });
+    if (e.type === "outOfGame") {
+      if (!replay) this.identifyPending = true;
       return;
     }
-    if (e.type === "areaGenerated" && this.compiled) {
-      // Replayed history (from before the app started) never moves saved progress.
-      if (replay) return;
-      const areas = this.bundle?.data.Areas ?? {};
-      const { progress, outcome } = trackArea(this.compiled, this.profile().progress, e.areaId, {
-        isTown: (id) => areas[id]?.is_town_area ?? false,
-      });
-      const before = this.profile().progress.activeEdge;
-      const moved = progress.activeEdge !== before;
-      // Detours keep the previous Undo available; moves replace it.
-      const prevUndo = this.state.get().tracking?.undoEdge ?? null;
-      this.state.set("tracking", { ...outcome, at: e.time, undoEdge: moved ? before : prevUndo });
-      this.saveProgress(progress);
+    if (e.type === "levelUp") {
+      this.onLevelUp(e.character, e.className, e.level);
+      return;
     }
+    if (e.type !== "areaGenerated" || !this.compiled || replay) return;
+
+    if (this.identifyPending || this.paused) {
+      this.identifyPending = false;
+      const candidates = Object.values(this.state.settings.characters).map((c) => ({
+        name: c.name,
+        progress: c.progress,
+        lastSeen: c.lastSeen,
+      }));
+      const match = candidates.length ? matchCharacter(this.compiled, candidates, e.areaId, this.trackCtx()) : this.activeKey();
+      const active = this.activeKey();
+      if (match === "new") {
+        const fresh: CharacterProfile = {
+          name: DEFAULT_CHARACTER,
+          className: null,
+          level: null,
+          progress: INITIAL_PROGRESS,
+          pobCode: null,
+          lastSeen: this.now(),
+        };
+        this.paused = false;
+        this.state.replaceSettings({
+          ...this.state.settings,
+          characters: { ...this.state.settings.characters, [DEFAULT_CHARACTER]: fresh },
+          activeCharacter: null,
+        });
+        this.notice("new", null, e.areaId, e.time);
+        return;
+      }
+      if (match === null) {
+        this.paused = true;
+        this.notice("paused", null, e.areaId, e.time);
+        return;
+      }
+      this.paused = false;
+      if (match !== active) {
+        this.state.replaceSettings({ ...this.state.settings, activeCharacter: match === DEFAULT_CHARACTER ? null : match });
+        this.notice("switched", match, e.areaId, e.time);
+      }
+    }
+
+    const before = this.profile().progress.activeEdge;
+    const { progress, outcome } = trackArea(this.compiled, this.profile().progress, e.areaId, this.trackCtx());
+    const moved = progress.activeEdge !== before;
+    // Detours keep the previous Undo available; moves replace it.
+    const prev = this.state.get().tracking;
+    const keepNotice = prev?.kind === "character" && outcome.kind === "same";
+    if (!keepNotice)
+      this.state.set("tracking", { ...outcome, at: e.time, undoEdge: moved ? before : prev?.undoEdge ?? null });
+    this.saveProgress({ ...progress, completed: progress.completed });
+  }
+
+  /** A level-up names the character for sure. */
+  private onLevelUp(name: string, className: string, level: number) {
+    const settings = this.state.settings;
+    const existing = settings.characters[name];
+    const activeIsDefault = settings.activeCharacter === null;
+    const fromDefault = !existing && activeIsDefault && !this.paused ? settings.characters[DEFAULT_CHARACTER] : undefined;
+    let progress = existing?.progress ?? fromDefault?.progress;
+    if (!progress) {
+      // A character we have never seen: start where they are now.
+      const area = this.state.get().game.area;
+      const at = this.compiled && area ? visitsOf(this.compiled, area.id, 0)[0] : undefined;
+      progress = this.compiled && at !== undefined ? setEdge(this.compiled, INITIAL_PROGRESS, at) : INITIAL_PROGRESS;
+    }
+    const profile: CharacterProfile = {
+      name,
+      className: baseClassOf(className) ?? className,
+      level,
+      progress,
+      pobCode: existing?.pobCode ?? fromDefault?.pobCode ?? null,
+      lastSeen: this.now(),
+    };
+    const characters = { ...settings.characters, [name]: profile };
+    if (fromDefault) delete characters[DEFAULT_CHARACTER];
+    const switching = settings.activeCharacter !== name && !fromDefault;
+    this.paused = false;
+    this.state.replaceSettings({ ...settings, characters, activeCharacter: name });
+    if (switching) this.notice("switched", name, this.state.get().game.area?.id ?? "", this.now());
   }
 
   // ----- bundle -------------------------------------------------------------
@@ -332,7 +399,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       steps: this.compiled.steps,
       edges: this.compiled.edges,
       areas: Object.fromEntries(
-        Object.values(data.Areas).map((a) => [a.id, { name: a.name, act: a.act, isTown: a.is_town_area }]),
+        Object.values(data.Areas).map((a) => [a.id, { name: a.name, act: a.act, isTown: a.is_town_area, level: a.level }]),
       ),
       quests: Object.fromEntries(Object.values(data.Quests).map((q) => [q.id, { name: q.name }])),
       gems: this.gemNames(),

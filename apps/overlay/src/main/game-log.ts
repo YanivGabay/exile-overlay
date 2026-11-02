@@ -87,6 +87,9 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
       const lastArea = events.findLast((e) => e.type === "areaGenerated");
       const lastLevel = events.findLast((e) => e.type === "levelUp");
       for (const e of [lastLevel, lastArea]) if (e) this.apply(e, true);
+      // Whichever came last decides whether we are in a zone or at character select.
+      const lastPresence = events.findLast((e) => e.type === "areaGenerated" || e.type === "outOfGame");
+      this.state.set("game", { ...this.state.get().game, inGame: lastPresence ? lastPresence.type === "areaGenerated" : null });
     } else {
       for (const e of events) this.apply(e, false);
     }
@@ -97,7 +100,10 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
     const game = this.state.get().game;
     switch (e.type) {
       case "areaGenerated":
-        this.state.set("game", { ...game, area: { id: e.areaId, name: null, level: e.areaLevel } });
+        this.state.set("game", { ...game, inGame: true, area: { id: e.areaId, name: null, level: e.areaLevel } });
+        break;
+      case "outOfGame":
+        this.state.set("game", { ...game, inGame: false });
         break;
       case "areaEntered":
         if (game.area) this.state.set("game", { ...game, area: { ...game.area, name: e.areaName } });
