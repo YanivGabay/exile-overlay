@@ -1,6 +1,6 @@
 # Creator outreach: permission to use names in route presets
 
-Status: draft, nothing sent. **Yaniv sends these** (or approves Gmail drafts); Claude never contacts anyone.
+Status: **not needed for now** (decided 2026-11-02). Presets get neutral names ("Speedrun", "Safe league start", "Beginner"). Tips are written in our own words, and an in-app "Sources" list links the public videos they came from. Outreach is only needed if we ever want a creator's name on a preset; this kit is kept for that case. Claude never contacts anyone; Yaniv would send.
 
 ## What we ask
 
