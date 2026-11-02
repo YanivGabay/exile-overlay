@@ -43,7 +43,7 @@ describe("compileGuide", () => {
 
   it("renders readable text", () => {
     const first = guide.steps[0];
-    expect(fragmentsToText(first.step.parts, bundle.data)).toMatch(/Hillock/);
+    expect(first.step.type === "fragment_step" && fragmentsToText(first.step.parts, bundle.data)).toMatch(/Hillock/);
   });
 });
 

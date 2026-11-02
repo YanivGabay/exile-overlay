@@ -48,7 +48,8 @@ export interface GuideStep {
   id: string;
   sectionIndex: number;
   sectionName: string;
-  step: RouteData.FragmentStep;
+  /** A route step, or a gem step inserted from an imported build. */
+  step: RouteData.FragmentStep | RouteData.GemStep;
   /**
    * Index into `edges` of the area this step moves you to, or null when the
    * step does not change area. The first step of the route has edge 0.

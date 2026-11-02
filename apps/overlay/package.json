@@ -1,0 +1,32 @@
+{
+  "name": "@exile-overlay/app",
+  "productName": "Exile Overlay",
+  "version": "0.1.0",
+  "description": "Path of Exile overlay: leveling tracker with easy setup and a customizable layout",
+  "license": "MIT",
+  "author": "Yaniv Gabay",
+  "type": "module",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "dist": "electron-vite build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "electron-overlay-window": "4.1.0",
+    "electron-updater": "^6.8.11"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "electron": "45.2.1",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "vite": "^8.3.5",
+    "@exile-overlay/route-engine": "0.1.0"
+  }
+}

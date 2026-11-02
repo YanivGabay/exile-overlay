@@ -1,0 +1,37 @@
+appId: dev.exileoverlay.app
+productName: Exile Overlay
+copyright: Copyright (c) 2026 Yaniv Gabay
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+extraResources:
+  - from: resources/tray.png
+    to: tray.png
+  - from: resources/icon.png
+    to: icon.png
+  - from: ../../guides-snapshot/poe1.json
+    to: guides/poe1.json
+  - from: ../../LICENSE
+    to: LICENSE.txt
+  - from: ../../THIRD_PARTY_NOTICES.md
+    to: THIRD_PARTY_NOTICES.md
+asarUnpack:
+  - "**/*.node"
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.png
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  artifactName: ExileOverlay-Setup-${version}.${ext}
+publish:
+  provider: github
+  owner: YanivGabay
+  repo: exile-overlay
+  releaseType: draft

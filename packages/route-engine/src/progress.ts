@@ -1,5 +1,8 @@
 import type { CompiledGuide, GuideStep } from "./guide.js";
 
+/** The parts of a compiled guide that progress tracking needs. */
+export type GuideShape = Pick<CompiledGuide, "steps" | "edges">;
+
 /**
  * Progress through a guide is a position on its edge list: `activeEdge` is
  * the index of the area the player is currently in, according to the route.
@@ -26,7 +29,7 @@ const RESYNC_LOOKAHEAD = 12;
  *   position, so a detour never throws the player off the route.
  */
 export function onAreaEntered(
-  guide: CompiledGuide,
+  guide: GuideShape,
   progress: GuideProgress,
   areaId: string,
 ): GuideProgress {
@@ -41,7 +44,7 @@ export function onAreaEntered(
 
 /** Jump to the nearest edge for `areaId`: forward first, then backward. */
 export function resyncTo(
-  guide: CompiledGuide,
+  guide: GuideShape,
   progress: GuideProgress,
   areaId: string,
 ): GuideProgress {
@@ -56,7 +59,7 @@ export function resyncTo(
 }
 
 export function stepEdge(
-  guide: CompiledGuide,
+  guide: GuideShape,
   progress: GuideProgress,
   delta: 1 | -1,
 ): GuideProgress {
@@ -78,7 +81,7 @@ export function toggleCompleted(
 }
 
 /** The edge group each step belongs to (same length as guide.steps). */
-export function stepGroups(guide: CompiledGuide): number[] {
+export function stepGroups(guide: GuideShape): number[] {
   const groups: number[] = [];
   let group = 0;
   for (const step of guide.steps) {
@@ -101,7 +104,7 @@ export interface GuideView {
 }
 
 export function viewAt(
-  guide: CompiledGuide,
+  guide: GuideShape,
   progress: GuideProgress,
   upcomingCount = 3,
 ): GuideView {
