@@ -10,7 +10,7 @@ const TABS = [
   ["setup", "Setup"],
   ["guide", "Guide & build"],
   ["hotkeys", "Hotkeys"],
-  ["layout", "Layout"],
+  ["layout", "Overlay"],
   ["diagnostics", "Diagnostics"],
   ["about", "About"],
 ] as const;
@@ -284,11 +284,42 @@ function HotkeysTab({ state }: { state: AppState }) {
 
 // ----- Layout -----------------------------------------------------------------
 
+const FEATURE_LABELS: [keyof AppState["settings"]["features"], string][] = [
+  ["timer", "Campaign timer, deaths and levels per hour"],
+  ["reminders", "Reminders (movement speed boots, weapon recipes, vendor gems, danger zones)"],
+  ["zoneTips", "Zone tips"],
+  ["leagueTips", "League tips link"],
+  ["gemLinks", "Gem links widget (needs an imported build)"],
+];
+
 function LayoutTab({ state }: { state: AppState }) {
   const res = Object.keys(state.settings.layouts);
+  const features = state.settings.features;
   return (
     <section>
-      <h1>Layout</h1>
+      <h1>Overlay</h1>
+      <div className="row">
+        <button className="primary" onClick={() => void api.send({ type: "setHidden", hidden: !state.overlay.hidden })}>
+          {state.overlay.hidden ? "Show the overlay" : "Hide the overlay"}
+        </button>
+        <button onClick={() => void api.send({ type: "quit" })}>Quit Exile Overlay</button>
+      </div>
+      <p className="muted small">
+        You can also hide it with {state.settings.hotkeys.toggleOverlay} in game, with the ✕ on the guide, or from the tray icon
+        (bottom right of the taskbar; it may sit under the ^ arrow).
+      </p>
+      <h2>Show on the overlay</h2>
+      {FEATURE_LABELS.map(([key, label]) => (
+        <label className="toggle" key={key}>
+          <input
+            type="checkbox"
+            checked={features?.[key] !== false}
+            onChange={(e) => void api.send({ type: "updateSettings", patch: { features: { [key]: e.target.checked } } })}
+          />
+          {label}
+        </label>
+      ))}
+      <h2>Layout</h2>
       <p className="muted small">
         Press {state.settings.hotkeys.toggleEdit} in game (or the button below) to move, resize, fade or hide widgets. Layouts are
         saved per game resolution, relative to the game window, so they survive window moves.

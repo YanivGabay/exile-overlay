@@ -59,6 +59,7 @@ export function openSettingsWindow(tab?: string) {
 export function createTray(actions: {
   openSettings: (tab?: string) => void;
   toggleEdit: () => void;
+  toggleHidden: () => void;
   quit: () => void;
 }) {
   const tray = new Tray(nativeImage.createFromPath(resourcePath("tray.png")));
@@ -66,6 +67,7 @@ export function createTray(actions: {
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "Settings", click: () => actions.openSettings() },
+      { label: "Hide / show overlay", click: () => actions.toggleHidden() },
       { label: "Edit layout", click: () => actions.toggleEdit() },
       { label: "Diagnostics", click: () => actions.openSettings("diagnostics") },
       { type: "separator" },

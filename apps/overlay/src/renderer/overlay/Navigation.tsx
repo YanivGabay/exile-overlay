@@ -47,6 +47,12 @@ export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOp
       <button title="Undo the last move" disabled={!canUndo} onClick={() => void api.send({ type: "guideUndo" })}>
         <IconUndo title="Undo" />
       </button>
+      <button
+        title={`Hide the overlay (${k.toggleOverlay} or the tray icon brings it back)`}
+        onClick={() => void api.send({ type: "setHidden", hidden: true })}
+      >
+        ✕
+      </button>
       <button title="Route map: pick where you are" className={mapOpen ? "on" : ""} onClick={onToggleMap}>
         <IconMap title="Route map" />
       </button>

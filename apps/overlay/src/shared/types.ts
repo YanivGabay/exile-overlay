@@ -63,6 +63,8 @@ export interface Settings {
     clientLogPath: string | null;
   };
   hotkeys: HotkeySettings;
+  /** Parts of the overlay the player can switch off. */
+  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean };
   guide: {
     options: GuideOptions;
     view: GuideViewMode;
@@ -159,6 +161,7 @@ export type Command =
   | { type: "setWidgetLayout"; resolution: string; widget: WidgetId; layout: WidgetLayout }
   | { type: "resetLayout"; resolution: string }
   | { type: "setEditing"; editing: boolean }
+  | { type: "setHidden"; hidden: boolean }
   | { type: "guideStep"; delta: 1 | -1 }
   | { type: "guideResync" }
   | { type: "guideSetEdge"; edge: number }

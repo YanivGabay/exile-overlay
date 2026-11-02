@@ -32,7 +32,7 @@ export function OverlayApp() {
       <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} onChange={(l) => save("guide", l)}>
         <GuideCard state={state} guide={guide} />
       </Widget>
-      {guide?.build && (
+      {guide?.build && state.settings.features?.gemLinks !== false && (
         <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
           <GemLinks guide={guide} act={guide.areas[guide.edges[activeProfile(state).progress.activeEdge]]?.act ?? 1} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
         </Widget>

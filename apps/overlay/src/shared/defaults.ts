@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   schema: 1,
   firstRunDone: false,
   game: { targetTitle: POE1_WINDOW_TITLE, clientLogPath: null },
+  features: { timer: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true },
   hotkeys: {
     nextStep: "F4",
     prevStep: "F3",

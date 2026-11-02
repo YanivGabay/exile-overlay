@@ -175,13 +175,13 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           {n.text}
         </div>
       ))}
-      {guide.campaign?.zoneTips?.[card.areaId] && (
+      {state.settings.features?.zoneTips !== false && guide.campaign?.zoneTips?.[card.areaId] && (
         <p className="zone-tip">
           {guide.campaign.zoneTips[card.areaId].text}
           {!guide.campaign.zoneTips[card.areaId].verified && <span className="unchecked"> unchecked</span>}
         </p>
       )}
-      <Reminders items={reminders} />
+      {state.settings.features?.reminders !== false && <Reminders items={reminders} />}
       {labHere && guide.campaign?.labs?.[labHere] && (
         <div className="alert loot">{guide.campaign.labs[labHere]!.text}</div>
       )}
@@ -227,7 +227,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
               {campaign.actRemaining.length} more in this act
             </span>
           )}
-          {tips.length > 0 && (
+          {state.settings.features?.leagueTips !== false && tips.length > 0 && (
             <Interactive className="inline">
               <button className="link" onClick={() => setTipsOpen(!tipsOpen)}>
                 League tips
@@ -236,7 +236,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           )}
         </footer>
       )}
-      <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} />
+      {state.settings.features?.timer !== false && <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} />}
       {tipsOpen && (
         <ul className="tips">
           {tips.map((t) => (

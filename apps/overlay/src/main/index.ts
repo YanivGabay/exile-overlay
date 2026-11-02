@@ -85,6 +85,9 @@ app.whenReady().then(() => {
         state.replaceSettings({ ...state.settings, layouts });
         return { ok: true };
       }
+      case "setHidden":
+        overlay.setHidden(cmd.hidden);
+        return { ok: true };
       case "setEditing":
         overlay.setEditing(cmd.editing);
         return { ok: true };
@@ -180,6 +183,7 @@ app.whenReady().then(() => {
   if (!captureDir) createTray({
     openSettings: (tab) => openSettingsWindow(tab),
     toggleEdit: () => overlay.setEditing(!state.get().overlay.editing),
+    toggleHidden: () => overlay.setHidden(!state.get().overlay.hidden),
     quit: () => app.quit(),
   });
 
