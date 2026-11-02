@@ -37,16 +37,53 @@ function setup() {
     }
   };
   const enter = (areaId: string) => line(`Generating level 1 area "${areaId}" with seed 1`);
+  const raw = (rest: string) => line(rest).replace("[DEBUG", "[INFO");
   const levelUp = (name: string, cls: string, lvl: number) => line(`: ${name} (${cls}) is now level ${lvl}`).replace("[DEBUG", "[INFO");
   const logout = () => line("Async connecting to lon.login.pathofexile.com:20487");
   const active = () => {
     const s = state.get().settings;
     return s.characters[s.activeCharacter ?? DEFAULT_CHARACTER];
   };
-  return { state, guide, feed, enter, levelUp, logout, active };
+  return { state, guide, feed, enter, levelUp, logout, active, raw };
 }
 
 describe("GuideService with log events", () => {
+  it("times a full run, splits by act, counts deaths, stores the finished run", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Runner", "Duelist", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    let timer = t.active().timer!;
+    expect(timer.fullRun).toBe(true);
+    expect(timer.elapsedMs).toBeGreaterThan(0);
+    expect(timer.actSplits[1]).toBe(0);
+    t.feed(t.raw(": Runner has been slain."));
+    expect(t.active().timer!.deaths).toBe(1);
+    // Character select stops the clock; the next zone resumes it without counting the gap.
+    const before = t.active().timer!.elapsedMs;
+    t.feed(t.logout());
+    timer = t.active().timer!;
+    expect(timer.lastAt).toBeNull();
+    t.feed(t.enter("1_1_2"));
+    expect(t.active().timer!.elapsedMs).toBeLessThanOrEqual(before + 2000);
+    t.feed(t.raw(": You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."));
+    expect(t.active().resistPenalty).toBe(-30);
+    expect(t.state.get().tracking).toMatchObject({ kind: "resist", total: -30 });
+    t.feed(t.raw("Sin: May a new dawn arise!"));
+    expect(t.active().timer!.finishedAt).not.toBeNull();
+    expect(t.state.get().settings.runs).toHaveLength(1);
+    expect(t.state.get().settings.runs[0].character).toBe("Runner");
+  });
+
+  it("keeps timer and dismissals when a fresh character gets its name", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"));
+    expect(t.active().timer).toBeDefined();
+    t.guide.dismissReminder("ms-10");
+    t.feed(t.levelUp("Named", "Witch", 2));
+    expect(t.active().name).toBe("Named");
+    expect(t.active().timer).toBeDefined();
+    expect(t.active().dismissed).toContain("ms-10");
+  });
+
   it("follows a fresh character and survives town trips (the reported bug)", () => {
     const t = setup();
     t.feed(t.enter("1_1_1"), t.levelUp("Fresh_Witch", "Witch", 2), t.enter("1_1_town"), t.enter("1_1_2"));

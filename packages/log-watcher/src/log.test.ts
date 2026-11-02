@@ -43,6 +43,16 @@ describe("parseLine", () => {
     expect(parseLine(`${P} [INFO Client 29352] Connecting to instance server at 1.2.3.4:6112`)).toBeNull();
   });
 
+  it("parses Kitava's penalty, the end of the campaign and deaths", () => {
+    expect(
+      parseLine(`${P} [INFO Client 1] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances.`),
+    ).toMatchObject({ type: "resistPenalty", total: -30 });
+    expect(parseLine(`${P} [INFO Client 1] Sin: May a new dawn arise!`)).toMatchObject({ type: "campaignComplete" });
+    expect(parseLine(`${P} [INFO Client 1] : Tester_One has been slain.`)).toMatchObject({ type: "death", character: "Tester_One" });
+    // Someone else's chat line must not count.
+    expect(parseLine(`${P} [INFO Client 1] #Bob: Tester_One has been slain.`)).toBeNull();
+  });
+
   it("parses the English 'entered' line", () => {
     expect(parseLine(`${P} [INFO Client 1234] : You have entered The Coast.`)).toMatchObject({
       type: "areaEntered",

@@ -21,6 +21,7 @@ import {
 import { baseClassOf, type LogEvent } from "@exile-overlay/log-watcher";
 import type { AppStateStore } from "./app-state.js";
 import { decodePobCode } from "./pob.js";
+import { addDeath, finish, logTimeToMs, markAct, newTimer, pause, tick, type RunTimer } from "../shared/timer.js";
 import type { CharacterProfile, ManualMove, TrackingInfo } from "../shared/types.js";
 import type { GuideRender } from "../shared/guide-render.js";
 
@@ -252,14 +253,34 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   onLogEvent(e: LogEvent, replay: boolean) {
     if (e.type === "outOfGame") {
-      if (!replay) this.identifyPending = true;
+      if (!replay) {
+        this.identifyPending = true;
+        if (!this.paused) this.updateTimer((t) => pause(t, logTimeToMs(e.time)));
+      }
+      return;
+    }
+    if (replay) {
+      if (e.type === "levelUp") this.onLevelUp(e.character, e.className, e.level);
+      return;
+    }
+    if (e.type === "death") {
+      if (!this.paused && e.character === this.profile().name) this.updateTimer((t) => addDeath(t, this.currentAct()));
+      return;
+    }
+    if (e.type === "resistPenalty") {
+      if (!this.paused) this.saveProfile({ ...this.profile(), resistPenalty: e.total });
+      this.state.set("tracking", { kind: "resist", total: e.total, areaId: this.state.get().game.area?.id ?? "", at: e.time, undoEdge: null });
+      return;
+    }
+    if (e.type === "campaignComplete") {
+      if (!this.paused) this.finishRun(logTimeToMs(e.time));
       return;
     }
     if (e.type === "levelUp") {
       this.onLevelUp(e.character, e.className, e.level);
       return;
     }
-    if (e.type !== "areaGenerated" || !this.compiled || replay) return;
+    if (e.type !== "areaGenerated" || !this.compiled) return;
 
     if (this.identifyPending || this.paused) {
       this.identifyPending = false;
@@ -312,6 +333,43 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     if (!keepNotice)
       this.state.set("tracking", { ...outcome, at: e.time, undoEdge: moved ? before : prev?.undoEdge ?? null });
     this.saveProgress({ ...progress, completed: progress.completed });
+
+    // Timer: start on the first zone (full run if it is The Twilight Strand), then tick and split by act.
+    const at = logTimeToMs(e.time);
+    const profile = this.profile();
+    let timer = profile.timer ?? newTimer(at, e.areaId === this.compiled.edges[0], profile.level ?? 1);
+    timer = markAct(tick(timer, at), this.currentAct());
+    this.saveProfile({ ...this.profile(), timer });
+  }
+
+  private currentAct(): number {
+    const edge = this.profile().progress.activeEdge;
+    return this.bundle?.data.Areas[this.compiled?.edges[edge] ?? ""]?.act ?? 1;
+  }
+
+  private updateTimer(fn: (t: RunTimer) => RunTimer) {
+    const p = this.profile();
+    if (p.timer) this.saveProfile({ ...p, timer: fn(p.timer) });
+  }
+
+  /** Sin's "May a new dawn arise!": stop the timer and store the run for best/previous/average. */
+  private finishRun(at: number) {
+    const p = this.profile();
+    if (!p.timer || p.timer.finishedAt !== null) {
+      this.saveProfile({ ...p, campaignComplete: true });
+      return;
+    }
+    const timer = finish(p.timer, at);
+    const runs = timer.fullRun
+      ? [...this.state.settings.runs, { character: p.name, date: new Date(at).toISOString(), totalMs: timer.elapsedMs, actSplits: timer.actSplits }]
+      : this.state.settings.runs;
+    const characters = { ...this.state.settings.characters, [p.name]: { ...p, timer, campaignComplete: true } };
+    this.state.replaceSettings({ ...this.state.settings, characters, runs });
+  }
+
+  dismissReminder(id: string) {
+    const p = this.profile();
+    this.saveProfile({ ...p, dismissed: [...new Set([...(p.dismissed ?? []), id])] });
   }
 
   /** A level-up names the character for sure. */
@@ -328,6 +386,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       progress = this.compiled && at !== undefined ? setEdge(this.compiled, INITIAL_PROGRESS, at) : INITIAL_PROGRESS;
     }
     const profile: CharacterProfile = {
+      ...(existing ?? fromDefault ?? {}),
       name,
       className: baseClassOf(className) ?? className,
       level,

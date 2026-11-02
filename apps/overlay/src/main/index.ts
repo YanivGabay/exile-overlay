@@ -100,6 +100,9 @@ app.whenReady().then(() => {
       case "guideUndo":
         guide.undo();
         return { ok: true };
+      case "dismissReminder":
+        guide.dismissReminder(cmd.id);
+        return { ok: true };
       case "setHover":
         overlay.setHover(cmd.interactive);
         return { ok: true };

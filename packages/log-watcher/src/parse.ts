@@ -15,7 +15,12 @@ export type LogEvent =
   | { type: "outOfGame"; time: string; reason: "clientStart" | "loginServer" }
   | { type: "areaGenerated"; time: string; areaId: string; areaLevel: number; seed: number }
   | { type: "levelUp"; time: string; character: string; className: string; level: number }
-  | { type: "areaEntered"; time: string; areaName: string };
+  | { type: "areaEntered"; time: string; areaName: string }
+  /** "You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances." */
+  | { type: "resistPenalty"; time: string; total: number }
+  /** Sin's last line after the campaign (Act 10 Kitava): "May a new dawn arise!" */
+  | { type: "campaignComplete"; time: string }
+  | { type: "death"; time: string; character: string };
 
 const PREFIX = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})\b.*?\] /;
 const GENERATING = /^Generating level (\d+) area "([^"]+)"(?: with seed (\d+))?/;
@@ -23,6 +28,10 @@ const GENERATING = /^Generating level (\d+) area "([^"]+)"(?: with seed (\d+))?/
 const LEVEL_UP = /^: (\S+) \(([A-Za-z]+)\) is now level (\d+)\s*$/;
 // English only; used for display, never for tracking.
 const ENTERED = /^: You have entered (.+?)\.\s*$/;
+
+const KITAVA = /^: You have been permanently weakened by Kitava's cruel affliction\. You now have (-?\d+)% to all Resistances/;
+const NEW_DAWN = /^Sin: May a new dawn arise!/;
+const DEATH = /^: (\S+) has (?:been slain|committed suicide)\.\s*$/;
 
 // Written when the client starts, and when the player logs out to character select.
 const LOG_OPENING = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \*\*\*\*\* LOG FILE OPENING/;
@@ -51,6 +60,11 @@ export function parseLine(line: string): LogEvent | null {
   if (m) {
     return { type: "levelUp", time, character: m[1], className: m[2], level: Number(m[3]) };
   }
+  m = KITAVA.exec(rest);
+  if (m) return { type: "resistPenalty", time, total: Number(m[1]) };
+  if (NEW_DAWN.test(rest)) return { type: "campaignComplete", time };
+  m = DEATH.exec(rest);
+  if (m) return { type: "death", time, character: m[1] };
   m = ENTERED.exec(rest);
   if (m) return { type: "areaEntered", time, areaName: m[1] };
   return null;

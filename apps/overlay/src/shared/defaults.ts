@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: Settings = {
   layouts: {},
   characters: {},
   activeCharacter: null,
+  runs: [],
 };
 
 export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {

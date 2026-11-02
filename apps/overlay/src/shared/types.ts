@@ -1,4 +1,5 @@
 import type { GuideOptions, GuideProgress, TrackOutcome } from "@exile-overlay/route-engine";
+import type { FinishedRun, RunTimer } from "./timer.js";
 
 /** Rectangle in physical screen pixels. */
 export interface Rect {
@@ -25,7 +26,7 @@ export interface WidgetLayout {
   scale: number;
 }
 
-export type GuideViewMode = "full" | "compact" | "gems";
+export type GuideViewMode = "full" | "compact" | "gems" | "minimal";
 
 export interface HotkeySettings {
   nextStep: string;
@@ -43,6 +44,13 @@ export interface CharacterProfile {
   /** Raw Path of Building export code, if imported. */
   pobCode: string | null;
   lastSeen: string;
+  /** Campaign timer, deaths, etc. Absent until the character's first tracked zone. */
+  timer?: RunTimer;
+  /** Reminder ids the player dismissed. */
+  dismissed?: string[];
+  /** Total resistance penalty seen in the log (Kitava), e.g. -30. */
+  resistPenalty?: number;
+  campaignComplete?: boolean;
 }
 
 export interface Settings {
@@ -66,6 +74,8 @@ export interface Settings {
   layouts: Record<string, Partial<Record<WidgetId, WidgetLayout>>>;
   characters: Record<string, CharacterProfile>;
   activeCharacter: string | null;
+  /** Finished full campaign runs, for best / previous / average splits. */
+  runs: FinishedRun[];
 }
 
 export type LogStatus =
@@ -119,7 +129,14 @@ export interface CharacterNotice {
   areaId: string;
 }
 
-export type TrackingInfo = (TrackOutcome | ManualMove | CharacterNotice) & {
+/** Kitava's resistance penalty, read from the log. */
+export interface ResistNotice {
+  kind: "resist";
+  total: number;
+  areaId: string;
+}
+
+export type TrackingInfo = (TrackOutcome | ManualMove | CharacterNotice | ResistNotice) & {
   at: string;
   /** Route position before this move; null when nothing moved. Enables Undo. */
   undoEdge: number | null;
@@ -146,6 +163,7 @@ export type Command =
   | { type: "guideResync" }
   | { type: "guideSetEdge"; edge: number }
   | { type: "guideUndo" }
+  | { type: "dismissReminder"; id: string }
   | { type: "setHover"; interactive: boolean }
   | { type: "toggleStepDone"; stepId: string }
   | { type: "selectCharacter"; name: string }
