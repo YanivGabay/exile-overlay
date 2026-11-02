@@ -123,6 +123,8 @@ What we can't do (verified limits):
 
 ## 4. Proposed beta scope (what ships Nov 13–24)
 
+Decided 2026-11-02 (coordinator, delegated by Yaniv): this scope is approved and price check is skipped. Adjusted after the XileHUD teardown (§5): zone tips for Acts 1–3, the timer must match XileHUD's best/previous/average, and a one-line minimal mode.
+
 1. **Gem and link plan** (#1 + the link plan from §1): setup by level from PoB, "buy now" reminders with copy search, link plan line.
 2. **Campaign checklist** (#2 + #5 + #8): passive points (done), skipped-quest alerts (done), trials and lab prompts, Kitava detection from the log, Act 8/9 prep, Act 10 → maps checklist.
 3. **Level and gear reminders** (#3 + #4): XP range and level targets, movement-speed boots and weapon recipe reminders by level.
@@ -135,8 +137,66 @@ Out of the beta: tree progression, gear checklist and item check, price check, f
 
 ---
 
-## 5. Open questions for Yaniv
+## 5. Teardown: XileHUD, and why ours wins
 
-1. Is the beta scope above right (gem/link plan, checklist, level/gear reminders, timer, 3.30 day 0)?
+Studied 2026-11-02 from its source (cloned at HEAD), README, data commit history and all 44 issues. **Licence: GPL-3.0**, so we study its behaviour and copy no code or content into our MIT project.
+
+**What it is.** A general PoE1 and PoE2 helper: merchant history, a modifier and base browser, crafting lookups, regex builder and a leveling module. Electron. 144★ and 156k release downloads, but the downloads cover every feature, not just leveling. Latest release v0.6.12 (2026-07-29) was a merchant-history update.
+
+**Leveling module, as built:**
+- **Route:** a hand-written JSON, `data/poe1/Leveling/leveling-data-v2.json`, with 10 acts and 505 steps:
+  - stable step ids; types navigation, waypoint, kill_boss, npc_quest, trial, passive, optional;
+  - **107 steps with a `layoutTip`** (e.g. "Go left. If you face a ledge, turn around and take the right/east side to get to Hailrake."), 232 hints, 17 recommended levels, and a recommended end level per act.
+- **Tracking:** polls Client.txt every 500 ms, reads `Generating level … area "<id>"`, and sends the zone to the overlay. It then ticks steps of the **current act** whose zone matches. An act changes only when all its steps are done and the next act's first zone is entered.
+- **Startup:** reads the last 50 KB of the log for the current zone.
+- **Extras:**
+  - PoB import with a "POB manager" (several builds);
+  - floating windows for gems, the passive tree (zoom/pan) and gear;
+  - notes;
+  - a weapon-base display in town;
+  - three view modes (normal, minimal, ultra-minimal click-through);
+  - a speedrun timer with a run-history database (best, previous, average);
+  - a leveling-only mode.
+
+**Weaknesses, with evidence:**
+
+| Problem | Evidence |
+|---|---|
+| **The PoE1 route hasn't been updated for two leagues.** The data file was last changed 2025-10-30 (3.27); nothing for 3.28 Mirage or 3.29 Allflame | `gh api …/commits?path=data/poe1/Leveling/leveling-data-v2.json` |
+| Missing steps | #32 "Act 4 quest tracker is missing crucial steps" (Shrieking Island) |
+| Leveling overlay freezes after ~10 minutes; must be force-closed | #38 (open, 2026-03) |
+| Auto-detect doesn't work for some Steam users | #25 |
+| Guide doesn't follow character or build changes | #37 |
+| Tree overlay resets on every zone change | #40 |
+| Clunky start: you must open the menu and launch the leveling tool before its hotkey works | #47 "better UI/UX … specifically for Leveling Guide" |
+| Antivirus blocks (Bitdefender, others) | #15, #31, #39 |
+| Mobalytics build import broken | #29, #43 |
+| No validation: hand-edited zone ids (a fix commit "Fix invalid zone IDs in leveling data"); one fixed route, no variants (league start / alt / bandits) | data commit history; data has no option flags |
+| Tracking is "tick steps of the current act when the zone matches": no detours, skipped zones or out-of-order play; with several characters the guide doesn't switch | `levelingPopoutTemplate.ts` zone-entered handler; #37 |
+
+**Why ours beats XileHUD and Exile UI:**
+
+| | XileHUD | Exile UI | **Exile Overlay** |
+|---|---|---|---|
+| Tracking accuracy | Step ticking per act; no detour or out-of-order handling | Last area id on the page, re-sync by long-press | **Measured on real play: 99.9% right zone or correctly waiting; 2 stalls in 1,729 zone entries**; handles detours, skips, reordering within an act, undo, route map |
+| Multiple characters | Doesn't follow (#37) | Character binding per guide slot by name | **Detects the character from the first zone after login**; pauses instead of mixing progress |
+| Route freshness | PoE1 data stale since 3.27 | Hand-patched; fixes need a slot reset | **Separate guides repo with CI validation; hot-updates without an app release**; day-0 3.30 process |
+| Route correctness | Hand-edited ids, no checks | Hand-edited, no validator | **Validator simulates the route for every option combination**; CI fails if any variant skips a passive-point quest |
+| Route options | One route | League-start / bandit / optionals toggles | League start, library, bandits (more variants planned) |
+| Setup | Menu dance before hotkeys work (#47); AV flags | AHK v1 install, resolution whitelist, calibration | One installer, auto-detects game and log, no calibration, diagnostics page |
+| Readability | Clear sentences plus layout tips | Terse tokens (`kill the_bloated_miller`) | Zone card: where you are, what to do, where next (looking ahead through empty zones), alerts |
+| Zone layout tips | **107 tips (their strongest asset)** | Images, plus credited third-party layouts | **Gap**: we must write ours (see below) |
+| Timer | **Run history with best/previous/average** | Act splits, CSV export | Planned (beta #4); must at least match XileHUD |
+| PoB tree / gear windows | Yes | Tree overlay | Phase 2 |
+
+**Beta adjustments after this teardown:**
+1. **Zone tips move up** from "ongoing content" to a beta item, for Acts 1–3 at least. XileHUD's 107 tips are the one thing it does better. We write our own, checked in game, and never copy theirs (GPL) or Cyclon's (unlicensed).
+2. **The timer must match XileHUD:** per-act splits plus best, previous and average from a local history. That's the bar, not a stretch goal.
+3. **A minimal mode is now required:** one line with zone and next step, for players who find the card too big. We have a "compact" view; add a one-line strip.
+4. Everything else stands. Our advantage is accuracy, freshness and setup. The beta should demo those first: the same day 3.30 launches, the route works, and nobody else's PoE1 route will be up to date.
+
+## 6. Open questions for Yaniv
+
+1. ~~Beta scope~~: approved.
 2. Your "guaranteed 5-link" memory: was it a specific league's mechanic or a quest reward? If you remember which, I'll check whether 3.30 brings it back. As of 3.29 there's no campaign 5-link.
-3. Price check: skip it for the beta, since APT/EE2 cover it? Recommended: skip.
+3. ~~Price check~~: skipped for the beta.
