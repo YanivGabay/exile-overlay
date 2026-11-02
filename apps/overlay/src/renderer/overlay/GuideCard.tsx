@@ -100,7 +100,10 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
 
   const todo = mode === "compact" ? card.todo.filter((s) => !done.has(s.id)).slice(0, 3) : card.todo;
   const leaveText = card.leave && !isMovementStep(card.leave.step) ? card.leave : null;
-  const tips = guide.campaign?.league?.notes.filter((n) => n.act === undefined || n.act === act) ?? [];
+  const notes = guide.campaign?.league?.notes ?? [];
+  // Zone-specific notes (e.g. a 5-link drop) show as alerts here and on the way there.
+  const zoneNotes = notes.filter((n) => n.area && (n.area === card.areaId || card.path.includes(n.area)));
+  const tips = notes.filter((n) => !n.area && (n.act === undefined || n.act === act));
 
   return (
     <div className="card">
@@ -140,6 +143,12 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
         </div>
       )}
 
+      {zoneNotes.map((n) => (
+        <div key={n.id} className="alert loot">
+          {n.area === card.areaId ? "Here: " : `In ${guide.areas[n.area!]?.name ?? n.area}: `}
+          {n.text}
+        </div>
+      ))}
       {hints(card.arrivalHints)}
       {todo.length > 0 ? <ul className="tasks">{todo.map(row)}</ul> : <p className="quiet">Nothing to do here.</p>}
 

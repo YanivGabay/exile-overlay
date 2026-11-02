@@ -48,3 +48,13 @@ describe("campaignStatus", () => {
     expect(levels.length).toBeGreaterThan(5);
   });
 });
+
+describe("league notes", () => {
+  it("has the two 5-link zones as area notes with existing area ids", () => {
+    const notes = bundle.campaign.league?.notes ?? [];
+    const five = notes.filter((n) => n.id.startsWith("5l-"));
+    expect(five.map((n) => n.area).sort()).toEqual(["1_5_1", "2_6_1"]);
+    for (const n of five) expect(bundle.data.Areas[n.area!]).toBeDefined();
+    expect(guide.edges).toContain("1_5_1");
+  });
+});

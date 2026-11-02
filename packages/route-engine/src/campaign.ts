@@ -8,7 +8,7 @@ export interface CampaignInfo {
   banditQuest?: { questId: string; killAllPoints: number };
   respecQuests?: string[];
   resistPenalties?: { fromAct: number; total: number; text: string }[];
-  league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; source?: string }[] };
+  league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; kind?: "loot" | "plan" | "info"; source?: string; verified?: boolean }[] };
 }
 
 export type QuestStatus = "done" | "here" | "ahead" | "skipped";

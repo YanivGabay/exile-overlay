@@ -130,6 +130,7 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .banner-ask { border-left-color: var(--town); background: rgba(232, 198, 106, 0.1); }
 .alert { border-left-color: var(--warn); background: rgba(240, 163, 94, 0.12); color: #f6d2ad; }
 
+.alert.loot { border-left-color: var(--next); background: rgba(208, 122, 46, 0.14); color: #f3d3b0; }
 .card-foot {
   display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center;
   margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(91, 74, 51, 0.6);

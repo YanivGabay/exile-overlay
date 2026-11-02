@@ -16,12 +16,19 @@ Sources used: official 3.29.0 patch notes, poedb (game data), poe.ninja (live AP
 
 ## 0. Summary
 
-**Guaranteed 5-link: there is no guaranteed 5-link in the 3.29 campaign.** The real league-start link plan is:
-1. Buy a **Tabula Rasa** (6 linked white sockets, level 3) as soon as you can trade **[V]**.
-2. Bench-craft a **guaranteed 4-link**, unlocked in Kaom's Stronghold in Act 4 (5 fusings) **[V]**.
-3. Fuse a 5–6 socket body armour once you have about **150 fusings**, which is the bench's own price for a 5-link **[V cost / U odds]**.
+**5-link: there are two campaign 5-link drops (correction).** My first pass said "none" because I only checked recipes, the crafting bench and the patch notes. Yaniv was right. The **league mechanic's encounter in The Slave Pens (Act 5) and The Twilight Strand (Act 6)** has dropped a **5-link body armour once each**:
+- **3.27 Keepers:** it was Breach; a player post says "Breaches in those areas dropped 5L guaranteed".
+- **3.28 Mirage:** players reported it didn't work.
+- **3.29 Allflame:** back. 3.29 build guides list both spots, and Exile UI re-added both lines three days after launch.
+- It is **not in any patch notes** **[U: community sources agree, no official statement]**. Sources: [forum thread 3915494](https://www.pathofexile.com/forum/view-thread/3915494), the [3.29 Mobalytics guide](https://mobalytics.gg/poe/builds/penance-brand-ignite-elementalist-league-starter) (search snippet), and Exile UI commits `b1e58447` / `e8732722` / `1d35916f`.
 
-The 5- and 6-link bench crafts only unlock in maps **[V]**. The overlay should show this as a **link plan**, with reminders at the right moments.
+Full link plan:
+1. **Tabula Rasa** from trade (6-link, level 3) **[V]**.
+2. A guaranteed bench **4-link** after Kaom's Stronghold (Act 4) **[V]**.
+3. **The Slave Pens and Act 6 Twilight Strand league encounters** for the 5-link **[U]**.
+4. Otherwise fuse (~150 fusings) **[V cost]**.
+
+The overlay now shows "Here: 5-link chance…" in those two zones and on the way to them. **On 3.30 day 0, check whether Covens of Umbra's mechanic keeps these encounters.**
 
 **What levelers need most** (ranked by how often creator guides repeat it, and what the best tools ship):
 1. A gem and link plan from your build.
@@ -52,6 +59,20 @@ The 5- and 6-link bench crafts only unlock in maps **[V]**. The overlay should s
 
 | Way to get links | When | Reliability | Fact |
 |---|---|---|---|
+| **League encounter in The Slave Pens (Act 5)** | Act 5 start | One 5-link body armour (may need a zone re-run) | [U] 3.27 Breach; not in 3.28; back in 3.29 per guides and Exile UI. Not in patch notes |
+| **League encounter in The Twilight Strand (Act 6)** | Act 6 start | One 5-link body armour | [U] same sources |
+| **Tabula Rasa** (6-link, level 3) | As soon as you can trade | Best early option | [V] poedb; 5c late in 3.29 on poe.ninja |
+| **Bench: Four Linked Sockets** (5 fusings) | After Kaom's Stronghold (Act 4) | Guaranteed 4-link | [V] poedb |
+| Fuse a 5–6 socket item | ~150 fusings | Luck | Bench price [V]; odds [U] |
+| Bench Five / Six Linked (150 / 1,500 fusings) | Maps only | Guaranteed, endgame | [V] |
+| Div cards (The Chains that Bind, The Jeweller's Boon) | Maps | Luck | [V] |
+| Vendor recipes | n/a | Don't create links | [V] |
+
+3.29 socket changes: sockets are white by default and any gem fits any socket; Chromatic Orbs are no longer sold; bench colour crafts were removed **[V, patch notes]**. poe.re's coloured-link regex (`[rgb]`) no longer matches white sockets **[V]**.
+
+**In the overlay (done):** alerts in, and on the way to, The Slave Pens and Act 6 Twilight Strand, plus the full link plan under League tips.
+
+---|---|---|---|
 | **Tabula Rasa** (unique Simple Robe, 6 linked white sockets, level 3) | As soon as you can trade (Act 1–2) | Best | [V] poedb. Price late in 3.29 is 5c with 1,322 listings on poe.ninja; the day-1 price wasn't available |
 | **Bench: Four Linked Sockets** (5 fusings) | After Kaom's Stronghold (Act 4) | Guaranteed 4-link | [V] poedb crafting bench |
 | **Fuse a 5–6 socket item** | Whenever you have ~150 fusings | Luck; the bench charges 150 for a 5-link | Bench cost [V]; per-orb odds [U] (old community logs, GGG never published them) |
