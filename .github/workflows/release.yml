@@ -1,0 +1,30 @@
+name: Release
+
+# Push a tag like v0.2.0 to build the Windows installer and attach it to a
+# DRAFT GitHub release. Publishing the draft is a manual step.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx vitest run
+      - name: Build
+        working-directory: apps/overlay
+        run: npx electron-vite build
+      - name: Package and upload to a draft release
+        working-directory: apps/overlay
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --publish always

@@ -9,11 +9,13 @@ import { OverlayWindow } from "./overlay-window.js";
 import { SettingsStore } from "./settings-store.js";
 import { PRELOAD, createTray, loadPage, lockNavigation, openSettingsWindow, resourcePath } from "./windows.js";
 import { importPob } from "./pob.js";
+import updater from "electron-updater";
 import { IPC, type AppState, type Command } from "../shared/types.js";
 import { DEFAULT_WIDGET_LAYOUT } from "../shared/defaults.js";
 
-/** Guide bundles are published here once the guides repo is public. Until then: offline snapshot only. */
-const DEFAULT_GUIDE_URL: string | null = null;
+/** Guide bundles are published by the guides repo CI. While that repo is private the fetch 404s and the snapshot is used. */
+const DEFAULT_GUIDE_URL: string | null =
+  "https://raw.githubusercontent.com/YanivGabay/exile-overlay-guides/bundles/poe1.json";
 const GUIDES_ISSUE_URL = "https://github.com/YanivGabay/exile-overlay-guides/issues/new";
 
 // Test hooks: a separate settings folder and a fixed log file, so tests never touch real settings.
@@ -177,6 +179,14 @@ app.whenReady().then(() => {
     toggleEdit: () => overlay.setEditing(!state.get().overlay.editing),
     quit: () => app.quit(),
   });
+
+  // App updates from GitHub Releases (installed builds only). Failures are silent:
+  // offline, or no public release yet.
+  if (app.isPackaged && !captureDir) {
+    const check = () => void updater.autoUpdater.checkForUpdatesAndNotify().catch(() => undefined);
+    check();
+    setInterval(check, 6 * 60 * 60 * 1000);
+  }
 
   guide.start();
   void log.start();

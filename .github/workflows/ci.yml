@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Typecheck
+        run: |
+          npx tsc -p packages/route-engine/tsconfig.json
+          npx tsc -p packages/log-watcher/tsconfig.json
+          npx tsc -p apps/overlay/tsconfig.json
+      - name: Tests (incl. real-play accuracy gate)
+        run: npx vitest run
+
+  windows-build:
+    runs-on: windows-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build app
+        working-directory: apps/overlay
+        run: npx electron-vite build
+      - name: Package installer (not published)
+        working-directory: apps/overlay
+        run: npx electron-builder --win --publish never
+      - uses: actions/upload-artifact@v5
+        with:
+          name: installer
+          path: apps/overlay/release/*.exe
+          retention-days: 14

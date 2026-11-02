@@ -11,5 +11,11 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.11.2"
-  }
+  },
+  "files": [
+    "src/**/*.ts",
+    "!src/**/*.test.ts",
+    "NOTICE.md"
+  ],
+  "description": "Route language, validator and progress tracking for Exile Overlay leveling guides"
 }
