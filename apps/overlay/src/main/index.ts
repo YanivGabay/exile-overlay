@@ -31,6 +31,7 @@ app.whenReady().then(() => {
     overlay: { attached: false, targetFocused: false, bounds: null, editing: false, hidden: false },
     game: { logStatus: { kind: "searching" }, area: null, character: null },
     guide: { state: "loading", source: null, version: null, gameVersion: null, title: null, message: null },
+    tracking: null,
   };
   // For testing without the game: attach to any window by its exact title.
   if (process.env.EXILE_OVERLAY_TARGET) initial.settings.game.targetTitle = process.env.EXILE_OVERLAY_TARGET;

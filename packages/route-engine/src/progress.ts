@@ -17,29 +17,78 @@ export interface GuideProgress {
 
 export const INITIAL_PROGRESS: GuideProgress = { activeEdge: 0, completed: [] };
 
-/** How far ahead to look when re-syncing to a zone the player entered. */
-const RESYNC_LOOKAHEAD = 12;
+/** Jump forward automatically only this far; further away we ask the player. */
+const AUTO_JUMP_WINDOW = 6;
 
 /**
- * Called on every "area entered" event from Client.txt.
- * - Entering the next area of the route advances by one.
- * - Entering an area a few edges ahead (the player skipped a step, or the
- *   tracker missed a zone) jumps forward to it.
- * - Anything else (towns, hideouts, backtracking, side areas) keeps the
- *   position, so a detour never throws the player off the route.
+ * What the tracker decided for one zone change. The overlay shows this, so
+ * the player always knows why the guide did (or didn't) move.
  */
-export function onAreaEntered(
+export type TrackOutcome =
+  /** Entered the next zone of the route. */
+  | { kind: "advanced"; areaId: string; from: number; to: number }
+  /** Re-entered the zone the route says you are in (portal, death, relog). */
+  | { kind: "same"; areaId: string }
+  /** A town, hideout, or a zone the route already passed: the guide waits. */
+  | { kind: "detour"; areaId: string; reason: "town" | "visited" }
+  /** A zone a few steps ahead that you have not been to: you skipped something. */
+  | { kind: "jumped"; areaId: string; from: number; to: number }
+  /** A zone far ahead on the route: not moved, the player can confirm with re-sync. */
+  | { kind: "ahead"; areaId: string; edge: number }
+  /** A zone the route never visits (maps, lab, side content). */
+  | { kind: "offRoute"; areaId: string };
+
+export interface TrackContext {
+  isTown: (areaId: string) => boolean;
+}
+
+/**
+ * Decide how a zone change moves the player along the route.
+ *
+ * The route visits some zones several times (towns, the Coast via waypoint,
+ * ...). A naive "find this zone ahead" jumps to the wrong visit when you
+ * just pop back to town. Rules, in order:
+ *  1. Same zone as the current route position: stay.
+ *  2. The next zone of the route: advance by one.
+ *  3. A town/hideout, or a zone the route has already been through: a
+ *     detour; stay and wait for the player to come back.
+ *  4. A zone ahead that the route has not visited yet: if it is close, the
+ *     player skipped steps, so jump; if it is far, only suggest it.
+ *  5. Anything else is off-route: stay.
+ */
+export function trackArea(
   guide: GuideShape,
   progress: GuideProgress,
   areaId: string,
-): GuideProgress {
+  ctx: TrackContext,
+): { progress: GuideProgress; outcome: TrackOutcome } {
   const { edges } = guide;
-  const current = progress.activeEdge;
-  const limit = Math.min(edges.length - 1, current + RESYNC_LOOKAHEAD);
-  for (let i = current + 1; i <= limit; i++) {
-    if (edges[i] === areaId) return { ...progress, activeEdge: i };
+  const p = Math.min(progress.activeEdge, edges.length - 1);
+  const stay = (outcome: TrackOutcome) => ({ progress, outcome });
+
+  if (edges[p] === areaId) return stay({ kind: "same", areaId });
+  if (edges[p + 1] === areaId) {
+    return { progress: { ...progress, activeEdge: p + 1 }, outcome: { kind: "advanced", areaId, from: p, to: p + 1 } };
   }
-  return progress;
+  if (ctx.isTown(areaId) || isHideoutLikeArea(areaId)) return stay({ kind: "detour", areaId, reason: "town" });
+  if (edges.slice(0, p).includes(areaId)) return stay({ kind: "detour", areaId, reason: "visited" });
+
+  const ahead = edges.indexOf(areaId, p + 2);
+  if (ahead === -1) return stay({ kind: "offRoute", areaId });
+  if (ahead - p <= AUTO_JUMP_WINDOW) {
+    return { progress: { ...progress, activeEdge: ahead }, outcome: { kind: "jumped", areaId, from: p, to: ahead } };
+  }
+  return stay({ kind: "ahead", areaId, edge: ahead });
+}
+
+/** Hideouts, the Menagerie, Kingsmarch and similar personal areas. */
+export function isHideoutLikeArea(areaId: string): boolean {
+  return /hideout/i.test(areaId) || /^Menagerie/.test(areaId) || /Settlers/i.test(areaId);
+}
+
+/** Backwards-compatible wrapper: towns are recognised by the common "_town" id suffix. */
+export function onAreaEntered(guide: GuideShape, progress: GuideProgress, areaId: string): GuideProgress {
+  return trackArea(guide, progress, areaId, { isTown: (id) => /_town$/.test(id) }).progress;
 }
 
 /** Jump to the nearest edge for `areaId`: forward first, then backward. */

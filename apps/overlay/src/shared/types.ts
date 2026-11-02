@@ -1,4 +1,4 @@
-import type { GuideOptions, GuideProgress } from "@exile-overlay/route-engine";
+import type { GuideOptions, GuideProgress, TrackOutcome } from "@exile-overlay/route-engine";
 
 /** Rectangle in physical screen pixels. */
 export interface Rect {
@@ -105,6 +105,8 @@ export interface AppState {
   overlay: OverlayStatus;
   game: GameStatus;
   guide: GuideStatus;
+  /** The tracker's last decision, shown in the overlay. Null until the first zone change. */
+  tracking: (TrackOutcome & { at: string }) | null;
 }
 
 /** Commands renderers send to main. */

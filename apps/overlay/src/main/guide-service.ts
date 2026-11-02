@@ -6,7 +6,7 @@ import {
   compileGuide,
   parsePobXml,
   INITIAL_PROGRESS,
-  onAreaEntered,
+  trackArea,
   resyncTo,
   stepEdge,
   toggleCompleted,
@@ -148,10 +148,12 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   step(delta: 1 | -1) {
+    this.state.set("tracking", null);
     if (this.compiled) this.saveProgress(stepEdge(this.compiled, this.profile().progress, delta));
   }
 
   resync() {
+    this.state.set("tracking", null);
     const area = this.state.get().game.area;
     if (this.compiled && area) this.saveProgress(resyncTo(this.compiled, this.profile().progress, area.id));
   }
@@ -190,10 +192,14 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       return;
     }
     if (e.type === "areaGenerated" && this.compiled) {
-      // Replayed history only re-syncs a fresh profile; it never moves a saved one.
-      const progress = this.profile().progress;
+      // Replayed history (from before the app started) never moves saved progress.
       if (replay) return;
-      this.saveProgress(onAreaEntered(this.compiled, progress, e.areaId));
+      const areas = this.bundle?.data.Areas ?? {};
+      const { progress, outcome } = trackArea(this.compiled, this.profile().progress, e.areaId, {
+        isTown: (id) => areas[id]?.is_town_area ?? false,
+      });
+      this.state.set("tracking", { ...outcome, at: e.time });
+      this.saveProgress(progress);
     }
   }
 

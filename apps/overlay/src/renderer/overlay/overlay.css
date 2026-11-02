@@ -80,3 +80,13 @@ html, body.overlay-body, #root {
 .report-box { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
 .report-box textarea { width: 100%; resize: vertical; }
 .status { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; background: var(--panel); border-radius: 4px; }
+.banner {
+  margin: 2px 0 6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(127, 214, 200, 0.08);
+  border: 1px solid rgba(127, 214, 200, 0.25);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+.banner-ask { background: rgba(212, 165, 74, 0.12); border-color: var(--gold-dim); }

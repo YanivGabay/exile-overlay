@@ -111,6 +111,7 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
           </span>
         )}
       </div>
+      <TrackingBanner state={state} guide={guide} routeArea={guide.edges[profile.progress.activeEdge]} />
       <ul className="steps">
         {current.map((s) => stepRow(s, "current"))}
         {view.next && (
@@ -125,6 +126,46 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
       {reporting && <ReportBox stepId={reporting} onClose={() => setReporting(null)} />}
     </div>
   );
+}
+
+/** Says what the tracker just decided, so the guide never moves (or stays) silently. */
+function TrackingBanner({ state, guide, routeArea }: { state: AppState; guide: GuideRender; routeArea: string | undefined }) {
+  const t = state.tracking;
+  if (!t) return null;
+  const name = (id: string | undefined) => (id ? guide.areas[id]?.name ?? id : "");
+  const resume = <span className="chip chip-area">{name(routeArea)}</span>;
+  const key = state.settings.hotkeys.resync;
+  switch (t.kind) {
+    case "detour":
+      return (
+        <div className="banner">
+          {t.reason === "town" ? "In" : "Back in"} <span className="chip chip-town">{name(t.areaId)}</span>. The guide
+          waits for you in {resume}.
+        </div>
+      );
+    case "jumped":
+      return (
+        <div className="banner">
+          Skipped ahead to <span className="chip chip-area">{name(t.areaId)}</span>. Press {state.settings.hotkeys.prevStep} to go
+          back.
+        </div>
+      );
+    case "ahead":
+      return (
+        <div className="banner banner-ask">
+          <span className="chip chip-area">{name(t.areaId)}</span> is further along the route. Press {key} to continue from
+          there.
+        </div>
+      );
+    case "offRoute":
+      return (
+        <div className="banner">
+          <span className="chip">{name(t.areaId)}</span> isn't part of the route. The guide waits in {resume}.
+        </div>
+      );
+    default:
+      return null;
+  }
 }
 
 function ReportBox({ stepId, onClose }: { stepId: string; onClose: () => void }) {
