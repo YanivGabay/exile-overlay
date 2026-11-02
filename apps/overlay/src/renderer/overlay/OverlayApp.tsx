@@ -6,6 +6,7 @@ import { DEFAULT_WIDGET_LAYOUT, resolutionKey } from "../../shared/defaults.js";
 import type { AppState, WidgetId, WidgetLayout } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Widget } from "./Widget.js";
+import { Interactive, NavBar, RouteMap } from "./Navigation.js";
 
 export function OverlayApp() {
   const state = useAppState();
@@ -55,6 +56,7 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
   const profile = activeProfile(state);
   const { view: mode, showHints } = state.settings.guide;
   const [reporting, setReporting] = useState<string | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const view = useMemo(() => (guide ? viewAt(guide, profile.progress, mode === "compact" ? 2 : 4) : null), [guide, profile.progress, mode]);
 
   if (state.guide.state === "error") return <div className="warn">{state.guide.message}</div>;
@@ -110,7 +112,11 @@ function GuideWidget({ state, guide }: { state: AppState; guide: GuideRender | n
             {profile.level ? ` · ${profile.level}` : ""}
           </span>
         )}
+        <NavBar state={state} mapOpen={mapOpen} onToggleMap={() => setMapOpen(!mapOpen)} />
       </div>
+      {mapOpen && (
+        <RouteMap guide={guide} active={profile.progress.activeEdge} onPick={() => setMapOpen(false)} />
+      )}
       <TrackingBanner state={state} guide={guide} routeArea={guide.edges[profile.progress.activeEdge]} />
       <ul className="steps">
         {current.map((s) => stepRow(s, "current"))}
@@ -135,19 +141,37 @@ function TrackingBanner({ state, guide, routeArea }: { state: AppState; guide: G
   const name = (id: string | undefined) => (id ? guide.areas[id]?.name ?? id : "");
   const resume = <span className="chip chip-area">{name(routeArea)}</span>;
   const key = state.settings.hotkeys.resync;
+  const undo =
+    t.undoEdge !== null ? (
+      <Interactive className="inline">
+        <button className="link" onClick={() => void api.send({ type: "guideUndo" })}>
+          {t.kind === "manual" && t.how === "undo" ? "Redo" : "Undo"}
+        </button>
+      </Interactive>
+    ) : null;
   switch (t.kind) {
+    case "manual":
+      if (t.how === "resync")
+        return (
+          <div className="banner">
+            You're in <span className="chip chip-area">{name(t.areaId ?? undefined)}</span>
+            {t.visits && t.visits > 1 ? ` (visit ${t.visit} of ${t.visits} on the route). Press ${key} again for another visit.` : "."}{" "}
+            {undo}
+          </div>
+        );
+      if (t.how === "undo") return <div className="banner">Undone. {undo}</div>;
+      return t.undoEdge !== null ? <div className="banner">Moved. {undo}</div> : null;
     case "detour":
       return (
         <div className="banner">
           {t.reason === "town" ? "In" : "Back in"} <span className="chip chip-town">{name(t.areaId)}</span>. The guide
-          waits for you in {resume}.
+          waits for you in {resume}. {undo}
         </div>
       );
     case "jumped":
       return (
         <div className="banner">
-          Skipped ahead to <span className="chip chip-area">{name(t.areaId)}</span>. Press {state.settings.hotkeys.prevStep} to go
-          back.
+          Skipped ahead to <span className="chip chip-area">{name(t.areaId)}</span>. {undo}
         </div>
       );
     case "ahead":

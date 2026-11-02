@@ -98,6 +98,23 @@ export interface GuideStatus {
   message: string | null;
 }
 
+/** A manual move: hotkey, button, route map, or "I'm here". */
+export interface ManualMove {
+  kind: "manual";
+  how: "step" | "pick" | "resync" | "undo";
+  areaId: string | null;
+  to: number;
+  /** For "I'm here" when the zone is on the route more than once. */
+  visit?: number;
+  visits?: number;
+}
+
+export type TrackingInfo = (TrackOutcome | ManualMove) & {
+  at: string;
+  /** Route position before this move; null when nothing moved. Enables Undo. */
+  undoEdge: number | null;
+};
+
 /** Everything the renderers display. Main owns it and pushes every change. */
 export interface AppState {
   appVersion: string;
@@ -106,7 +123,7 @@ export interface AppState {
   game: GameStatus;
   guide: GuideStatus;
   /** The tracker's last decision, shown in the overlay. Null until the first zone change. */
-  tracking: (TrackOutcome & { at: string }) | null;
+  tracking: TrackingInfo | null;
 }
 
 /** Commands renderers send to main. */
@@ -117,6 +134,9 @@ export type Command =
   | { type: "setEditing"; editing: boolean }
   | { type: "guideStep"; delta: 1 | -1 }
   | { type: "guideResync" }
+  | { type: "guideSetEdge"; edge: number }
+  | { type: "guideUndo" }
+  | { type: "setHover"; interactive: boolean }
   | { type: "toggleStepDone"; stepId: string }
   | { type: "selectCharacter"; name: string }
   | { type: "importPob"; input: string }

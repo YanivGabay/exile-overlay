@@ -1,5 +1,6 @@
 import { DIRECTION_ARROWS, DIRECTION_WORDS, type Fragments, type GuideStep, type RouteData } from "@exile-overlay/route-engine";
 import type { GuideRender } from "../../shared/guide-render.js";
+import { Interactive } from "../overlay/Navigation.js";
 
 /**
  * Renders one route step as readable text with small inline "chips" for the
@@ -78,6 +79,7 @@ function Fragment({ part, guide }: { part: Fragments.AnyFragment; guide: GuideRe
 
 function CopyChip({ text }: { text: string }) {
   return (
+    <Interactive className="inline">
     <button
       className="chip chip-copy"
       title="Copy the vendor search text"
@@ -85,6 +87,7 @@ function CopyChip({ text }: { text: string }) {
     >
       ⧉ search
     </button>
+    </Interactive>
   );
 }
 

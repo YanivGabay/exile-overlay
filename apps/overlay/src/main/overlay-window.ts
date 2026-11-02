@@ -36,6 +36,7 @@ export class OverlayWindow {
       this.state.patch({
         overlay: { attached: true, targetFocused: true, bounds: toRect(e) },
       });
+      this.restoreClickThrough();
       if (e.hasAccess === false) {
         this.state.patch({
           overlay: { attached: true },
@@ -46,11 +47,37 @@ export class OverlayWindow {
     ev.on("detach", () => {
       this.state.patch({ overlay: { attached: false, targetFocused: false, editing: false } });
     });
-    ev.on("focus", () => this.state.patch({ overlay: { targetFocused: true } }));
+    ev.on("focus", () => {
+      this.state.patch({ overlay: { targetFocused: true } });
+      this.restoreClickThrough();
+    });
     ev.on("blur", () => this.state.patch({ overlay: { targetFocused: false } }));
     ev.on("moveresize", (e: Rect) => this.state.patch({ overlay: { bounds: toRect(e) } }));
 
+    // Clicks on hover-enabled controls must not take focus away from the game.
+    this.window.setFocusable(false);
     OverlayController.attachByTitle(this.window, state.settings.game.targetTitle);
+  }
+
+  private hovering = false;
+
+  /**
+   * The library resets click-through on attach/focus without mouse
+   * forwarding; re-apply it with forwarding so the page still sees the
+   * mouse and can make its controls clickable on hover.
+   */
+  private restoreClickThrough() {
+    setImmediate(() => {
+      if (this.window.isDestroyed() || this.state.get().overlay.editing) return;
+      this.window.setIgnoreMouseEvents(!this.hovering, { forward: true });
+    });
+  }
+
+  /** The mouse is over a control (nav buttons, route map): accept clicks there. */
+  setHover(interactive: boolean) {
+    this.hovering = interactive;
+    if (this.state.get().overlay.editing) return;
+    this.window.setIgnoreMouseEvents(!interactive, { forward: true });
   }
 
   setEditing(editing: boolean) {
@@ -58,9 +85,14 @@ export class OverlayWindow {
     if (editing === overlay.editing) return;
     if (editing) {
       if (!overlay.attached) return;
+      // Edit mode needs keyboard focus (e.g. the report box).
+      this.window.setFocusable(true);
       OverlayController.activateOverlay();
     } else {
       OverlayController.focusTarget();
+      this.window.setFocusable(false);
+      this.hovering = false;
+      this.restoreClickThrough();
     }
     this.state.patch({ overlay: { editing } });
   }

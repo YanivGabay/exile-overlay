@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { compileGuide, INITIAL_PROGRESS, trackArea, type GameData, type GuideProgress } from "./index.js";
+import { compileGuide, INITIAL_PROGRESS, trackArea, visitsOf, type GameData, type GuideProgress } from "./index.js";
 
 const bundle = JSON.parse(
   readFileSync(new URL("../../../guides-snapshot/poe1.json", import.meta.url), "utf8"),
@@ -74,5 +74,17 @@ describe("trackArea", () => {
     }
     const r = play(messy);
     expect(r.progress.activeEdge).toBe(12);
+  });
+});
+
+describe("visitsOf", () => {
+  it("orders repeated visits by distance, earlier first on ties", () => {
+    const coastVisits = guide.edges.flatMap((e, i) => (e === "1_1_2" ? [i] : []));
+    expect(coastVisits.length).toBeGreaterThan(1);
+    const [a, b] = coastVisits;
+    const mid = Math.floor((a + b) / 2);
+    const ordered = visitsOf(guide, "1_1_2", mid);
+    expect(new Set(ordered)).toEqual(new Set(coastVisits));
+    expect(Math.abs(ordered[0] - mid)).toBeLessThanOrEqual(Math.abs(ordered[1] - mid));
   });
 });

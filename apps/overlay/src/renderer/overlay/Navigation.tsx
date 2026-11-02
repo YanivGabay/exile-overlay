@@ -1,0 +1,102 @@
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { api } from "../common/api.js";
+import { AnyStep } from "../common/Step.js";
+import type { AppState } from "../../shared/types.js";
+import type { GuideRender } from "../../shared/guide-render.js";
+
+/**
+ * Makes its children clickable while the mouse is over them, without edit
+ * mode. The rest of the overlay stays click-through, and clicks never take
+ * keyboard focus from the game.
+ */
+const IN_OVERLAY = document.body.classList.contains("overlay-body");
+const hover = (interactive: boolean) => IN_OVERLAY && void api.send({ type: "setHover", interactive });
+
+export function Interactive({ children, className = "" }: { children: ReactNode; className?: string }) {
+  useEffect(() => () => void hover(false), []);
+  return (
+    <span
+      className={`interactive ${className}`}
+      onPointerEnter={() => hover(true)}
+      onPointerLeave={() => hover(false)}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOpen: boolean; onToggleMap: () => void }) {
+  const k = state.settings.hotkeys;
+  const canUndo = state.tracking?.undoEdge != null;
+  return (
+    <Interactive className="nav">
+      <button title={`Previous zone (${k.prevStep})`} onClick={() => void api.send({ type: "guideStep", delta: -1 })}>
+        ◀
+      </button>
+      <button title={`Next zone (${k.nextStep})`} onClick={() => void api.send({ type: "guideStep", delta: 1 })}>
+        ▶
+      </button>
+      <button
+        title={`I'm here: jump to the zone you are in (${k.resync})`}
+        disabled={!state.game.area}
+        onClick={() => void api.send({ type: "guideResync" })}
+      >
+        ⌖
+      </button>
+      <button title="Undo the last move" disabled={!canUndo} onClick={() => void api.send({ type: "guideUndo" })}>
+        ↶
+      </button>
+      <button title="Route map: pick where you are" className={mapOpen ? "on" : ""} onClick={onToggleMap}>
+        ☰
+      </button>
+    </Interactive>
+  );
+}
+
+/** Every zone of the route, grouped by act. Click one to continue from there. */
+export function RouteMap({ guide, active, onPick }: { guide: GuideRender; active: number; onPick: () => void }) {
+  const groups = useMemo(() => {
+    // For each edge: its section and the steps done there (up to the next edge).
+    const out: { edge: number; section: string; steps: GuideRender["steps"] }[] = [];
+    for (const step of guide.steps) {
+      if (step.edgeIndex !== null) out.push({ edge: step.edgeIndex, section: step.sectionName, steps: [] });
+      out.at(-1)?.steps.push(step);
+    }
+    return out;
+  }, [guide]);
+  const activeRef = useRef<HTMLLIElement>(null);
+  useEffect(() => activeRef.current?.scrollIntoView({ block: "center" }), []);
+
+  let lastSection = "";
+  return (
+    <Interactive className="route-map-wrap">
+      <ul className="route-map">
+        {groups.map((g) => {
+          const header = g.section !== lastSection ? <li className="map-act">{g.section}</li> : null;
+          lastSection = g.section;
+          const area = guide.areas[guide.edges[g.edge]];
+          const detail = g.steps.slice(1, 3);
+          return [
+            header,
+            <li
+              key={g.edge}
+              ref={g.edge === active ? activeRef : undefined}
+              className={`map-row ${g.edge === active ? "active" : ""} ${g.edge < active ? "past" : ""}`}
+              onClick={() => {
+                void api.send({ type: "guideSetEdge", edge: g.edge });
+                onPick();
+              }}
+            >
+              <span className={`chip ${area?.isTown ? "chip-town" : "chip-area"}`}>{area?.name ?? guide.edges[g.edge]}</span>
+              {detail.map((d) => (
+                <span key={d.id} className="map-detail">
+                  <AnyStep entry={d} guide={guide} />
+                </span>
+              ))}
+            </li>,
+          ];
+        })}
+      </ul>
+    </Interactive>
+  );
+}

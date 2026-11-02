@@ -91,6 +91,15 @@ app.whenReady().then(() => {
       case "guideResync":
         guide.resync();
         return { ok: true };
+      case "guideSetEdge":
+        guide.pick(cmd.edge);
+        return { ok: true };
+      case "guideUndo":
+        guide.undo();
+        return { ok: true };
+      case "setHover":
+        overlay.setHover(cmd.interactive);
+        return { ok: true };
       case "toggleStepDone":
         guide.toggleStep(cmd.stepId);
         return { ok: true };

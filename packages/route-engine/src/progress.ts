@@ -179,3 +179,20 @@ export function viewAt(
     guide.edges.length > 1 ? active / (guide.edges.length - 1) : 1;
   return { current, next, upcoming, sectionName, fraction };
 }
+
+/**
+ * All route positions for `areaId`, nearest to `from` first. On a tie the
+ * earlier visit wins: after a tracking mistake the player is usually behind
+ * where the guide thinks they are.
+ */
+export function visitsOf(guide: GuideShape, areaId: string, from: number): number[] {
+  const out: number[] = [];
+  guide.edges.forEach((e, i) => {
+    if (e === areaId) out.push(i);
+  });
+  return out.sort((a, b) => Math.abs(a - from) - Math.abs(b - from) || a - b);
+}
+
+export function setEdge(guide: GuideShape, progress: GuideProgress, edge: number): GuideProgress {
+  return { ...progress, activeEdge: Math.max(0, Math.min(guide.edges.length - 1, edge)) };
+}

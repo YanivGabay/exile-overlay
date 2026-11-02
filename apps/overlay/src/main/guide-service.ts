@@ -7,7 +7,8 @@ import {
   parsePobXml,
   INITIAL_PROGRESS,
   trackArea,
-  resyncTo,
+  setEdge,
+  visitsOf,
   stepEdge,
   toggleCompleted,
   type CompiledGuide,
@@ -18,7 +19,7 @@ import {
 import { baseClassOf, type LogEvent } from "@exile-overlay/log-watcher";
 import type { AppStateStore } from "./app-state.js";
 import { decodePobCode } from "./pob.js";
-import type { CharacterProfile } from "../shared/types.js";
+import type { CharacterProfile, ManualMove, TrackingInfo } from "../shared/types.js";
 import type { GuideRender } from "../shared/guide-render.js";
 
 export interface GuideBundle {
@@ -64,6 +65,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   private render: GuideRender | null = null;
   private build: PobBuild | null = null;
   private buildError: string | null = null;
+  private lastResync: { areaId: string; order: number[]; index: number; time: number } | null = null;
   private timer: NodeJS.Timeout | null = null;
 
   constructor(
@@ -147,15 +149,75 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     this.state.replaceSettings({ ...this.state.settings, characters });
   }
 
-  step(delta: 1 | -1) {
-    this.state.set("tracking", null);
-    if (this.compiled) this.saveProgress(stepEdge(this.compiled, this.profile().progress, delta));
+  private now() {
+    return new Date().toISOString();
   }
 
+  private moveTo(edge: number, move: Omit<ManualMove, "kind" | "to">) {
+    if (!this.compiled) return;
+    const before = this.profile().progress;
+    const progress = setEdge(this.compiled, before, edge);
+    const info: TrackingInfo = {
+      kind: "manual",
+      ...move,
+      to: progress.activeEdge,
+      at: this.now(),
+      undoEdge: progress.activeEdge !== before.activeEdge ? before.activeEdge : null,
+    };
+    this.state.set("tracking", info);
+    this.saveProgress(progress);
+  }
+
+  step(delta: 1 | -1) {
+    this.lastResync = null;
+    const p = this.profile().progress.activeEdge;
+    this.moveTo(p + delta, { how: "step", areaId: this.compiled?.edges[p + delta] ?? null });
+  }
+
+  pick(edge: number) {
+    this.lastResync = null;
+    this.moveTo(edge, { how: "pick", areaId: this.compiled?.edges[edge] ?? null });
+  }
+
+  /** Swap back to the position before the last move (pressing it again redoes). */
+  undo() {
+    const t = this.state.get().tracking;
+    if (!t || t.undoEdge === null) return;
+    this.lastResync = null;
+    this.moveTo(t.undoEdge, { how: "undo", areaId: this.compiled?.edges[t.undoEdge] ?? null });
+  }
+
+  /**
+   * "I'm here": move to the route position of the zone the player is in.
+   * Zones the route visits more than once are cycled nearest-first when the
+   * key is pressed again within a few seconds.
+   */
   resync() {
-    this.state.set("tracking", null);
     const area = this.state.get().game.area;
-    if (this.compiled && area) this.saveProgress(resyncTo(this.compiled, this.profile().progress, area.id));
+    if (!this.compiled || !area) return;
+    const now = Date.now();
+    const last = this.lastResync;
+    let order: number[];
+    let index: number;
+    if (last && last.areaId === area.id && now - last.time < 10_000) {
+      order = last.order;
+      index = (last.index + 1) % order.length;
+    } else {
+      order = visitsOf(this.compiled, area.id, this.profile().progress.activeEdge);
+      index = 0;
+    }
+    if (order.length === 0) {
+      this.lastResync = null;
+      this.state.set("tracking", { kind: "offRoute", areaId: area.id, at: this.now(), undoEdge: null });
+      return;
+    }
+    this.lastResync = { areaId: area.id, order, index, time: now };
+    this.moveTo(order[index], {
+      how: "resync",
+      areaId: area.id,
+      visit: [...order].sort((a, b) => a - b).indexOf(order[index]) + 1,
+      visits: order.length,
+    });
   }
 
   toggleStep(stepId: string) {
@@ -198,7 +260,11 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       const { progress, outcome } = trackArea(this.compiled, this.profile().progress, e.areaId, {
         isTown: (id) => areas[id]?.is_town_area ?? false,
       });
-      this.state.set("tracking", { ...outcome, at: e.time });
+      const before = this.profile().progress.activeEdge;
+      const moved = progress.activeEdge !== before;
+      // Detours keep the previous Undo available; moves replace it.
+      const prevUndo = this.state.get().tracking?.undoEdge ?? null;
+      this.state.set("tracking", { ...outcome, at: e.time, undoEdge: moved ? before : prevUndo });
       this.saveProgress(progress);
     }
   }
