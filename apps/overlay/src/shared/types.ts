@@ -66,6 +66,8 @@ export interface Settings {
   /** Parts of the overlay the player can switch off. */
   features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean };
   guide: {
+    /** Route preset id from the guide bundle (league-start, speedrun, safe, new). */
+    preset: string;
     options: GuideOptions;
     view: GuideViewMode;
     showHints: boolean;

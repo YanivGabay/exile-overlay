@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS: Settings = {
     toggleOverlay: "F7",
   },
   guide: {
+    preset: "league-start",
     options: DEFAULT_GUIDE_OPTIONS,
     view: "full",
     showHints: true,

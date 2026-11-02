@@ -109,3 +109,27 @@ describe("trialStatus", () => {
     expect(end.every((x) => x.done === x.total && x.labReached)).toBe(true);
   });
 });
+
+import { tipsFor } from "./campaign.js";
+
+describe("zone tips and presets", () => {
+  const presets = bundle.campaign.presets ?? [];
+  it("ships four presets", () => {
+    expect(presets.map((p) => p.id)).toEqual(["league-start", "speedrun", "safe", "new"]);
+  });
+  it("filters tips by preset style", () => {
+    const speed = presets.find((p) => p.id === "speedrun")!;
+    const safe = presets.find((p) => p.id === "safe")!;
+    // The Den (Great White Beast) is a league-start detour: safe yes, speedrun no.
+    expect(tipsFor(bundle.campaign, "1_2_2a", safe).length).toBeGreaterThan(0);
+    expect(tipsFor(bundle.campaign, "1_2_2a", speed).length).toBe(0);
+    expect(tipsFor(bundle.campaign, "1_3_14_2", speed)[0].text).toMatch(/one wagon/);
+  });
+  it("only safe presets get the extra resistance checks", () => {
+    const at = { activeEdge: guide.edges.indexOf("1_4_town"), completed: [] };
+    const base = { level: 30, actOf: (id: string) => areas[id]?.act, upcoming: ["1_4_town", "1_4_4_3"], dismissed: new Set<string>() };
+    const ids = (preset: string) => activeReminders(guide, at, bundle.campaign.reminders ?? [], { ...base, preset }).map((r) => r.id);
+    expect(ids("safe")).toContain("safe-res-kaom");
+    expect(ids("speedrun")).not.toContain("safe-res-kaom");
+  });
+});

@@ -12,8 +12,10 @@ export interface CampaignInfo {
   reminders?: Reminder[];
   labs?: Partial<Record<"normal" | "cruel" | "merciless", { areaLevel: number; text: string }>>;
   mapsChecklist?: { items: string[] };
-  /** Our own per-zone tips; verified = checked in game. */
-  zoneTips?: Record<string, { text: string; verified: boolean }>;
+  /** Per-zone tips; verified = checked in game by us; confidence = how many guides agree. */
+  zoneTips?: Record<string, ZoneTip[]>;
+  presets?: Preset[];
+  credits?: { key: string; title: string; creator: string; url: string; license?: string }[];
   league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; kind?: "loot" | "plan" | "info"; source?: string; verified?: boolean }[] };
 }
 
@@ -118,4 +120,32 @@ export function recommendedLevel(steps: RouteData.FragmentStep[]): number | null
     }
   }
   return null;
+}
+
+export interface ZoneTip {
+  text: string;
+  /** "all", "race", "safe", "new", or combinations like "race/safe". */
+  style: string;
+  sources: string[];
+  confidence: "high" | "med" | "low";
+  verified: boolean;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  description: string;
+  options: { leagueStart: boolean; library: boolean; bandit: "None" | "Oak" | "Kraityn" | "Alira" };
+  /** Tip styles shown with this preset. */
+  tipStyles: string[];
+  view: "full" | "compact" | "gems" | "minimal";
+}
+
+/** Tips for a zone that fit the preset, most reliable first. */
+export function tipsFor(info: CampaignInfo, areaId: string, preset: Preset | undefined): ZoneTip[] {
+  const styles = new Set(preset?.tipStyles ?? ["all", "safe", "race", "new"]);
+  const rank = { high: 0, med: 1, low: 2 } as const;
+  return (info.zoneTips?.[areaId] ?? [])
+    .filter((t) => t.style.split("/").some((s) => styles.has(s)))
+    .sort((a, b) => rank[a.confidence] - rank[b.confidence]);
 }

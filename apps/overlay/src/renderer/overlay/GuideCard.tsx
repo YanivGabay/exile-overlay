@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   activeReminders,
   campaignStatus,
+  tipsFor,
   trialStatus,
   isMovementStep,
   recommendedLevel,
@@ -9,6 +10,7 @@ import {
   zoneCard,
   type GuideStep,
   type RouteData,
+  type ZoneTip,
 } from "@exile-overlay/route-engine";
 import { activeProfile, api } from "../common/api.js";
 import { AnyStep, StepText } from "../common/Step.js";
@@ -54,6 +56,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
             actOf,
             upcoming: [card.areaId, ...card.path],
             dismissed: new Set(profile.dismissed ?? []),
+            preset: state.settings.guide.preset,
           })
         : [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,11 +178,11 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           {n.text}
         </div>
       ))}
-      {state.settings.features?.zoneTips !== false && guide.campaign?.zoneTips?.[card.areaId] && (
-        <p className="zone-tip">
-          {guide.campaign.zoneTips[card.areaId].text}
-          {!guide.campaign.zoneTips[card.areaId].verified && <span className="unchecked"> unchecked</span>}
-        </p>
+      {state.settings.features?.zoneTips !== false && guide.campaign && (
+        <ZoneTips
+          tips={tipsFor(guide.campaign, card.areaId, guide.campaign.presets?.find((p) => p.id === state.settings.guide.preset))}
+          credits={guide.campaign.credits ?? []}
+        />
       )}
       {state.settings.features?.reminders !== false && <Reminders items={reminders} />}
       {labHere && guide.campaign?.labs?.[labHere] && (
@@ -307,5 +310,22 @@ function MinimalLine({ guide, card }: { guide: GuideRender; card: NonNullable<Re
         </span>
       )}
     </div>
+  );
+}
+
+/** Up to two tips for this zone; sources on hover; unchecked if no guide backs it. */
+function ZoneTips({ tips, credits }: { tips: ZoneTip[]; credits: { key: string; creator: string; title: string }[] }) {
+  if (!tips.length) return null;
+  const who = (keys: string[]) =>
+    keys.map((k) => credits.find((c) => c.key === k)).filter(Boolean).map((c) => `${c!.creator}: ${c!.title}`).join("\n");
+  return (
+    <ul className="zone-tips">
+      {tips.slice(0, 2).map((t) => (
+        <li key={t.text} className="zone-tip" title={t.sources.length ? `From:\n${who(t.sources)}` : "Written by us, not yet checked in game"}>
+          {t.text}
+          {t.confidence === "low" && !t.verified && <span className="unchecked"> unchecked</span>}
+        </li>
+      ))}
+    </ul>
   );
 }

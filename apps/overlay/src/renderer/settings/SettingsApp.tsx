@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { activeProfile, api, useAppState } from "../common/api.js";
+import { activeProfile, api, useAppState, useGuide } from "../common/api.js";
 import type { AppState, HotkeySettings } from "../../shared/types.js";
 import type { Diagnostics } from "../../preload/index.js";
 import type { Bandit } from "@exile-overlay/route-engine";
@@ -167,6 +167,8 @@ function GuideTab({ state }: { state: AppState }) {
   return (
     <section>
       <h1>Guide & build</h1>
+      <h2>Preset</h2>
+      <PresetPicker state={state} />
       <h2>Route</h2>
       <label className="toggle">
         <input type="checkbox" checked={g.options.leagueStart} onChange={(e) => setOpt({ leagueStart: e.target.checked })} />
@@ -440,6 +442,9 @@ function AboutTab() {
         </button>{" "}
         by HeartofPhos (MIT).
       </p>
+      <h2>Sources for tips and route</h2>
+      <p className="small muted">Tips are written in our own words from these public guides. The creators don't endorse Exile Overlay.</p>
+      <Credits />
       <p className="muted small">This product isn't affiliated with or endorsed by Grinding Gear Games in any way.</p>
     </section>
   );
@@ -479,5 +484,47 @@ function RunsTable({ state }: { state: AppState }) {
         })}
       </tbody>
     </table>
+  );
+}
+
+/** Pick a preset: sets the route options and view, and which tips and reminders show. */
+function PresetPicker({ state }: { state: AppState }) {
+  const guide = useGuide();
+  const presets = guide?.campaign?.presets ?? [];
+  if (!presets.length) return null;
+  return (
+    <div className="presets">
+      {presets.map((p) => (
+        <button
+          key={p.id}
+          className={`preset ${state.settings.guide.preset === p.id ? "on" : ""}`}
+          onClick={() =>
+            void api.send({ type: "updateSettings", patch: { guide: { preset: p.id, options: p.options, view: p.view } } })
+          }
+        >
+          <strong>{p.name}</strong>
+          <span className="muted small">{p.description}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Credits() {
+  const guide = useGuide();
+  const credits = guide?.campaign?.credits ?? [];
+  if (!credits.length) return null;
+  return (
+    <ul className="small">
+      {credits.map((c) => (
+        <li key={c.key}>
+          <button className="link" onClick={() => void api.send({ type: "openExternal", url: c.url })}>
+            {c.title}
+          </button>{" "}
+          by {c.creator}
+          {c.license ? ` (${c.license})` : ""}
+        </li>
+      ))}
+    </ul>
   );
 }

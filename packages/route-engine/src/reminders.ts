@@ -11,6 +11,8 @@ export interface Reminder {
   /** Reminders in the same group replace each other; the latest active one wins. */
   group?: string;
   kind: "gear" | "vendor" | "lab" | "danger" | "level" | "info";
+  /** Only for these presets (e.g. ["safe"]); all presets when absent. */
+  presets?: string[];
   text: string;
   /** Vendor search text to copy (Ctrl+F in shops). */
   search?: string;
@@ -36,6 +38,8 @@ export interface ReminderContext {
   /** Areas on the way: current zone first, then the look-ahead path. */
   upcoming: string[];
   dismissed: Set<string>;
+  /** Active preset id; reminders limited to other presets are skipped. */
+  preset?: string;
 }
 
 /** Route positions where each quest is handed in (first occurrence). */
@@ -65,6 +69,7 @@ export function activeReminders(
   const ok = (r: Reminder) => {
     const w = r.when;
     if (ctx.dismissed.has(r.id)) return false;
+    if (r.presets && ctx.preset && !r.presets.includes(ctx.preset)) return false;
     if (w.minLevel !== undefined && (ctx.level ?? 0) < w.minLevel) return false;
     if (w.maxLevel !== undefined && ctx.level !== null && ctx.level > w.maxLevel) return false;
     if (w.belowLevel !== undefined && ctx.level !== null && ctx.level >= w.belowLevel) return false;

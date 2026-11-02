@@ -29,3 +29,6 @@ h2 { font-size: 15px; margin: 22px 0 8px; color: var(--text); }
 .hotkey.recording { border-color: var(--gold); color: var(--gold); }
 .pob { display: flex; flex-direction: column; gap: 6px; max-width: 680px; }
 ul.small li { margin: 4px 0; }
+.presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 760px; }
+.preset { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px 12px; background: var(--panel-solid); }
+.preset.on { border-color: var(--gold); box-shadow: inset 2px 0 0 var(--gold); }
