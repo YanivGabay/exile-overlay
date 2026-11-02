@@ -3,6 +3,8 @@
 Date: 2026-11-02. Status: research only, no app code.
 Goal: build a PoE overlay that beats **Exile UI** + **exile-leveling**, mainly on **setup** and **customization**.
 
+Revision 3: corrections from later research. 3.30 is named "Covens of Umbra"; the reveal is Fri Nov 6, 12:30 PM PST (not Nov 7–8); launch Nov 13 PST. A competitor missing below, XileHUD (156k downloads), is covered in [product-vision.md](product-vision.md).
+
 Revision 2 (same day): added the leveling-guide provenance and critique (§2.3), and a plan for building a better guide (§6.2). The stack stays Electron: Yaniv considered Tauri/Rust and chose Electron.
 
 Detailed evidence, with file:line and issue citations, is in five appendices:
