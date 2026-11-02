@@ -194,3 +194,20 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .muted { color: var(--ash); }
 .small { font-size: 0.85em; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---- reminders, timer, minimal ---- */
+.reminders { list-style: none; margin: 4px 0 6px; padding: 0; }
+.reminder { margin: 2px 0; padding: 3px 6px 3px 8px; font-size: 0.88em; border-left: 2px solid var(--town); background: rgba(232, 198, 106, 0.08); }
+.reminder.danger { border-left-color: var(--warn); background: rgba(240, 163, 94, 0.12); }
+.reminder .dismiss { margin-left: 6px; padding: 0 5px; font-size: 0.8em; color: var(--ash); border-color: transparent; background: transparent; }
+.timer { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 6px; font-size: 0.8em; color: var(--ash); font-variant-numeric: tabular-nums; }
+.timer .time { color: var(--bone); font-weight: 700; }
+.maps-list { margin-top: 8px; padding: 6px 8px; border-left: 2px solid var(--good); background: rgba(143, 194, 122, 0.08); }
+.minimal { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.zone-mini { font-family: "Cinzel", serif; font-weight: 700; color: var(--area); }
+.minimal .next-zone { font-size: 1em; }
+.mini-task { color: var(--ash); font-size: 0.9em; }
+.gems + .gems { margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(91, 74, 51, 0.6); }
+.gems li.locked { opacity: 0.45; }
+.gem-lvl { margin-left: auto; font-size: 0.8em; color: var(--ash); font-weight: 500; }
+.gem-fresh { margin: 2px 0 4px; padding: 2px 6px; font-size: 0.85em; color: var(--good); border-left: 2px solid var(--good); }

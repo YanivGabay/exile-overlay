@@ -489,7 +489,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     const out: GuideRender["gems"] = {};
     for (const g of this.build.requiredGems) {
       const gem = Gems[g.id];
-      if (gem) out[g.id] = { name: gem.name, colour: GemColours[gem.primary_attribute] ?? "#c8c8c8", isSupport: gem.is_support };
+      if (gem) out[g.id] = { name: gem.name, colour: GemColours[gem.primary_attribute] ?? "#c8c8c8", isSupport: gem.is_support, level: gem.required_level };
     }
     return out;
   }

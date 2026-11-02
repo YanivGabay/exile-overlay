@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { api, useAppState, useGuide } from "../common/api.js";
+import { activeProfile, api, useAppState, useGuide } from "../common/api.js";
 import { DEFAULT_WIDGET_LAYOUT, resolutionKey } from "../../shared/defaults.js";
 import type { AppState, WidgetId, WidgetLayout } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Widget } from "./Widget.js";
 import { Interactive } from "./Navigation.js";
 import { GuideCard } from "./GuideCard.js";
+import { pickSkillSet } from "../../shared/skillsets.js";
 import { gemColour } from "../common/Step.js";
 
 export function OverlayApp() {
@@ -33,7 +34,7 @@ export function OverlayApp() {
       </Widget>
       {guide?.build && (
         <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
-          <GemLinks guide={guide} />
+          <GemLinks guide={guide} act={guide.areas[guide.edges[activeProfile(state).progress.activeEdge]]?.act ?? 1} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
         </Widget>
       )}
       <Widget id="status" title="Status" layout={layoutOf("status")} editing={editing} onChange={(l) => save("status", l)}>
@@ -59,38 +60,62 @@ function EditBar({ resolution }: { resolution: string }) {
   );
 }
 
-/** The build's skill groups: main gem(s) first, then supports, coloured by attribute. */
-function GemLinks({ guide }: { guide: GuideRender }) {
-  const [group, setGroup] = useState(0);
+/** The build's skill groups for this part of the campaign: usable now vs later, coloured by attribute. */
+function GemLinks({ guide, act, level }: { guide: GuideRender; act: number; level: number | null }) {
   const groups = guide.build?.gemLinks ?? [];
+  const titles = [...new Set(groups.map((g) => g.title))];
+  const auto = pickSkillSet(titles, act, level);
+  const [manual, setManual] = useState<number | null>(null);
   if (!groups.length) return <div className="muted small">The imported build has no gem links.</div>;
-  const g = groups[Math.min(group, groups.length - 1)];
-  const gem = (id: string) => guide.gems[id] ?? { name: id.split("/").at(-1) ?? id, colour: "", isSupport: false };
+  const setIndex = manual ?? auto;
+  const title = titles[Math.min(setIndex, titles.length - 1)];
+  const inSet = groups.filter((g) => g.title === title);
+  const gem = (id: string) => guide.gems[id] ?? { name: id.split("/").at(-1) ?? id, colour: "", isSupport: false, level: 1 };
   const where = (link: { quests: { questId: string }[] }) =>
-    link.quests.length ? `buy after ${guide.quests[link.quests[0].questId]?.name ?? link.quests[0].questId}` : "not sold to your class";
+    link.quests.length ? `Sold after ${guide.quests[link.quests[0].questId]?.name ?? link.quests[0].questId}` : "Not sold to your class";
+  const fresh =
+    level === null
+      ? []
+      : inSet.flatMap((g) => [...g.primaryGems, ...g.secondaryGems]).filter((l) => {
+          const lv = gem(l.id).level;
+          return lv > 1 && lv <= level && lv > level - 2;
+        });
   return (
     <div className="gem-links">
       <div className="gem-head">
-        <span className="muted small">{guide.build?.ascendancy ?? guide.build?.className}</span>
-        {groups.length > 1 && (
+        <span className="gem-title">{title}</span>
+        {titles.length > 1 && (
           <Interactive className="gem-nav">
-            <button onClick={() => setGroup((group - 1 + groups.length) % groups.length)}>◀</button>
+            <button title="Previous gem setup" onClick={() => setManual((setIndex - 1 + titles.length) % titles.length)}>◀</button>
             <span className="small">
-              {group + 1}/{groups.length}
+              {setIndex + 1}/{titles.length}
+              {manual === null ? "" : " (manual)"}
             </span>
-            <button onClick={() => setGroup((group + 1) % groups.length)}>▶</button>
+            <button title="Next gem setup" onClick={() => setManual((setIndex + 1) % titles.length)}>▶</button>
+            {manual !== null && (
+              <button title="Follow my level again" onClick={() => setManual(null)}>auto</button>
+            )}
           </Interactive>
         )}
       </div>
-      <div className="gem-title">{g.title}</div>
-      <ul className="gems">
-        {[...g.primaryGems, ...g.secondaryGems].map((l, i) => (
-          <li key={l.id} className={i < g.primaryGems.length ? "primary" : "support"} title={where(l)}>
-            <span className="gem-dot" style={{ background: gemColour(gem(l.id).colour) }} />
-            {gem(l.id).name}
-          </li>
-        ))}
-      </ul>
+      {fresh.length > 0 && (
+        <div className="gem-fresh">Usable at your level now: {fresh.map((l) => gem(l.id).name).join(", ")}</div>
+      )}
+      {inSet.map((g, gi) => (
+        <ul className="gems" key={gi}>
+          {[...g.primaryGems, ...g.secondaryGems].map((l, i) => {
+            const info = gem(l.id);
+            const locked = level !== null && info.level > level;
+            return (
+              <li key={l.id + i} className={`${i < g.primaryGems.length ? "primary" : "support"} ${locked ? "locked" : ""}`} title={where(l)}>
+                <span className="gem-dot" style={{ background: gemColour(info.colour) }} />
+                {info.name}
+                {locked && <span className="gem-lvl">level {info.level}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      ))}
     </div>
   );
 }

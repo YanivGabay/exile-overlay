@@ -8,7 +8,7 @@ export interface GuideRender {
   areas: Record<string, { name: string; act: number; isTown: boolean; level: number }>;
   quests: Record<string, { name: string }>;
   /** Gems referenced by the imported build. */
-  gems: Record<string, { name: string; colour: string; isSupport: boolean }>;
+  gems: Record<string, { name: string; colour: string; isSupport: boolean; level: number }>;
   build: { className: string; ascendancy: string | null; gemLinks: RouteData.GemLinkGroup[] } | null;
   /** Passive-point quests, resist penalties, league notes (null in old bundles). */
   campaign: CampaignInfo | null;

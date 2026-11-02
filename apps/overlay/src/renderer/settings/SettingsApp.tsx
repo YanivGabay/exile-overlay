@@ -4,6 +4,7 @@ import type { AppState, HotkeySettings } from "../../shared/types.js";
 import type { Diagnostics } from "../../preload/index.js";
 import type { Bandit } from "@exile-overlay/route-engine";
 import { HotkeyInput } from "./HotkeyInput.js";
+import { compareSplit, formatDuration } from "../../shared/timer.js";
 
 const TABS = [
   ["setup", "Setup"],
@@ -191,12 +192,15 @@ function GuideTab({ state }: { state: AppState }) {
           <option value="full">Full: current zone, next zone and what follows</option>
           <option value="compact">Compact: the next few steps only</option>
           <option value="gems">Gems only: quest rewards and gem purchases (needs a build)</option>
+          <option value="minimal">Minimal: one line, where you are and where to go</option>
         </select>
       </label>
       <label className="toggle">
         <input type="checkbox" checked={g.showHints} onChange={(e) => set({ showHints: e.target.checked })} />
         Show hints under steps
       </label>
+      <h2>Campaign runs</h2>
+      <RunsTable state={state} />
       <h2>Build (Path of Building)</h2>
       <PobImport state={state} />
       <h2>Characters</h2>
@@ -407,5 +411,42 @@ function AboutTab() {
       </p>
       <p className="muted small">This product isn't affiliated with or endorsed by Grinding Gear Games in any way.</p>
     </section>
+  );
+}
+
+function RunsTable({ state }: { state: AppState }) {
+  const runs = state.settings.runs ?? [];
+  if (!runs.length)
+    return (
+      <p className="muted small">
+        Finish a campaign that started in The Twilight Strand and its act times show here, as best, previous and average splits.
+      </p>
+    );
+  const acts = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  return (
+    <table className="table">
+      <thead>
+        <tr>
+          <td>Reached</td>
+          <td>Best</td>
+          <td>Previous</td>
+          <td>Average</td>
+        </tr>
+      </thead>
+      <tbody>
+        {acts.map((a) => {
+          const c = compareSplit(runs, a);
+          if (c.best === null) return null;
+          return (
+            <tr key={a}>
+              <td>{a === 11 ? "Campaign done" : `Act ${a}`}</td>
+              <td>{formatDuration(c.best)}</td>
+              <td>{formatDuration(c.previous!)}</td>
+              <td>{formatDuration(c.average!)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }

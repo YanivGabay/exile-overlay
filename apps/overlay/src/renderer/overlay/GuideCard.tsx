@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import {
+  activeReminders,
   campaignStatus,
+  trialStatus,
   isMovementStep,
   recommendedLevel,
   visitedSet,
@@ -15,6 +17,7 @@ import type { AppState } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Interactive, NavBar, RouteMap } from "./Navigation.js";
 import { TrackingBanner, CharacterPicker, ReportBox } from "./Banners.js";
+import { MapsChecklist, Reminders, TimerStrip, TrialsLine } from "./Extras.js";
 
 const TRAVEL = { waypoint: "Waypoint to", portal: "Portal to", logout: "Log out to", walk: "" } as const;
 
@@ -42,6 +45,22 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
     [guide, profile.progress, options.bandit],
   );
 
+  const actOf = (id: string) => guide?.areas[id]?.act;
+  const reminders = useMemo(
+    () =>
+      guide && card && guide.campaign?.reminders
+        ? activeReminders(guide, profile.progress, guide.campaign.reminders, {
+            level: profile.level ?? state.game.character?.level ?? null,
+            actOf,
+            upcoming: [card.areaId, ...card.path],
+            dismissed: new Set(profile.dismissed ?? []),
+          })
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [guide, card, profile.progress, profile.level, profile.dismissed],
+  );
+  const trials = useMemo(() => (guide ? trialStatus(guide, profile.progress, actOf) : []), [guide, profile.progress]);
+
   if (state.guide.state === "error") return <div className="note warn">{state.guide.message}</div>;
   if (!guide || !card) return <div className="note">Loading the guide…</div>;
   if (state.tracking?.kind === "character" && state.tracking.event === "paused")
@@ -51,6 +70,8 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
         <CharacterPicker state={state} />
       </div>
     );
+
+  if (mode === "minimal") return <MinimalLine guide={guide} card={card} />;
 
   const done = new Set(profile.progress.completed);
   const editing = state.overlay.editing;
@@ -98,6 +119,11 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
     </li>
   );
 
+  // The Labyrinth step is in this zone: show which lab and its area level.
+  const labHere = [...card.todo, ...(card.leave ? [card.leave] : [])]
+    .flatMap((s) => (s.step.type === "fragment_step" ? s.step.parts : []))
+    .map((p) => (typeof p !== "string" && p.type === "ascend" && p.version !== "eternal" ? p.version : null))
+    .find((v): v is "normal" | "cruel" | "merciless" => v !== null);
   const todo = mode === "compact" ? card.todo.filter((s) => !done.has(s.id)).slice(0, 3) : card.todo;
   const leaveText = card.leave && !isMovementStep(card.leave.step) ? card.leave : null;
   const notes = guide.campaign?.league?.notes ?? [];
@@ -149,6 +175,10 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           {n.text}
         </div>
       ))}
+      <Reminders items={reminders} />
+      {labHere && guide.campaign?.labs?.[labHere] && (
+        <div className="alert loot">{guide.campaign.labs[labHere]!.text}</div>
+      )}
       {hints(card.arrivalHints)}
       {todo.length > 0 ? <ul className="tasks">{todo.map(row)}</ul> : <p className="quiet">Nothing to do here.</p>}
 
@@ -175,8 +205,9 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
             )}
           </div>
         </div>
-      ) : (
-        <p className="quiet">Campaign complete. To the maps.</p>
+      ) : null}
+      {(profile.campaignComplete || !card.leave) && guide.campaign?.mapsChecklist && (
+        <MapsChecklist items={guide.campaign.mapsChecklist.items} />
       )}
 
       {campaign && (
@@ -184,6 +215,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           <span className="passives" title="Passive skill points from quests on this route">
             <IconPassive /> {campaign.pointsDone} of {campaign.pointsTotal} quest passives
           </span>
+          <TrialsLine trials={trials} act={act} />
           {campaign.actRemaining.length > 0 && (
             <span className="quiet" title={campaign.actRemaining.map((q) => q.name).join(", ")}>
               {campaign.actRemaining.length} more in this act
@@ -198,6 +230,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           )}
         </footer>
       )}
+      <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} />
       {tipsOpen && (
         <ul className="tips">
           {tips.map((t) => (
@@ -245,3 +278,28 @@ function LevelCheck({ charLevel, areaLevel }: { charLevel: number; areaLevel: nu
   );
 }
 
+
+/** One line: where you are → where to go, with the first thing to do there. */
+function MinimalLine({ guide, card }: { guide: GuideRender; card: NonNullable<ReturnType<typeof zoneCard>> }) {
+  const here = guide.areas[card.areaId]?.name ?? card.areaId;
+  const nextId = card.path.at(-1);
+  const first = card.todo[0] ?? card.nextTodo[0];
+  return (
+    <div className="minimal">
+      <span className="zone-mini">{here}</span>
+      {nextId && (
+        <>
+          <span className="next-go">
+            <IconGo />
+          </span>
+          <span className="next-zone">{guide.areas[nextId]?.name ?? nextId}</span>
+        </>
+      )}
+      {first && (
+        <span className="mini-task">
+          <AnyStep entry={first} guide={guide} />
+        </span>
+      )}
+    </div>
+  );
+}

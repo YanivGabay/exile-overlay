@@ -76,6 +76,12 @@ export function TrackingBanner({ state, guide, routeArea }: { state: AppState; g
         );
       if (t.event === "new") return <div className="banner">New character: the guide starts from the beginning.</div>;
       return <div className="banner">Now following {t.name === "_default" ? "your character" : t.name}.</div>;
+    case "resist":
+      return (
+        <div className="alert">
+          Kitava's curse: your resistances are now {t.total}% lower. Check that fire, cold and lightning are still capped.
+        </div>
+      );
     case "ahead":
       return (
         <div className="banner banner-ask">
