@@ -175,6 +175,12 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           {n.text}
         </div>
       ))}
+      {guide.campaign?.zoneTips?.[card.areaId] && (
+        <p className="zone-tip">
+          {guide.campaign.zoneTips[card.areaId].text}
+          {!guide.campaign.zoneTips[card.areaId].verified && <span className="unchecked"> unchecked</span>}
+        </p>
+      )}
       <Reminders items={reminders} />
       {labHere && guide.campaign?.labs?.[labHere] && (
         <div className="alert loot">{guide.campaign.labs[labHere]!.text}</div>

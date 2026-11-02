@@ -12,6 +12,8 @@ export interface CampaignInfo {
   reminders?: Reminder[];
   labs?: Partial<Record<"normal" | "cruel" | "merciless", { areaLevel: number; text: string }>>;
   mapsChecklist?: { items: string[] };
+  /** Our own per-zone tips; verified = checked in game. */
+  zoneTips?: Record<string, { text: string; verified: boolean }>;
   league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; kind?: "loot" | "plan" | "info"; source?: string; verified?: boolean }[] };
 }
 

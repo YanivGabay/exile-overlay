@@ -211,3 +211,5 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .gems li.locked { opacity: 0.45; }
 .gem-lvl { margin-left: auto; font-size: 0.8em; color: var(--ash); font-weight: 500; }
 .gem-fresh { margin: 2px 0 4px; padding: 2px 6px; font-size: 0.85em; color: var(--good); border-left: 2px solid var(--good); }
+.zone-tip { margin: 2px 0 6px; font-size: 0.9em; color: var(--bone); font-style: italic; }
+.zone-tip .unchecked { font-style: normal; font-size: 0.75em; color: var(--ash); border: 1px solid var(--edge); padding: 0 4px; margin-left: 4px; }
