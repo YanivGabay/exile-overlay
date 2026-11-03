@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import {
   activeReminders,
   campaignStatus,
+  recipeStatus,
   tipsFor,
   trialStatus,
   isMovementStep,
@@ -62,6 +63,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [guide, card, profile.progress, profile.level, profile.dismissed],
   );
+  const recipes = useMemo(() => (guide?.campaign ? recipeStatus(guide, profile.progress, guide.campaign) : null), [guide, profile.progress]);
   const trials = useMemo(() => (guide ? trialStatus(guide, profile.progress, actOf) : []), [guide, profile.progress]);
 
   if (state.guide.state === "error") return <div className="note warn">{state.guide.message}</div>;
@@ -184,6 +186,11 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           credits={guide.campaign.credits ?? []}
         />
       )}
+      {recipes?.here.filter((r) => r.why).map((r) => (
+        <div key={r.name} className="alert recipe">
+          Crafting recipe here: <strong>{r.name.replace(/ - /, ", ")}</strong>. {r.why}
+        </div>
+      ))}
       {state.settings.features?.reminders !== false && <Reminders items={reminders} />}
       {labHere && guide.campaign?.labs?.[labHere] && (
         <div className="alert loot">{guide.campaign.labs[labHere]!.text}</div>
@@ -225,6 +232,11 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
             <IconPassive /> {campaign.pointsDone} of {campaign.pointsTotal} quest passives
           </span>
           <TrialsLine trials={trials} act={act} />
+          {recipes && recipes.total > 0 && (
+            <span title="Crafting bench recipes picked up on your route">
+              Recipes {recipes.collected}/{recipes.total}
+            </span>
+          )}
           {campaign.actRemaining.length > 0 && (
             <span className="quiet" title={campaign.actRemaining.map((q) => q.name).join(", ")}>
               {campaign.actRemaining.length} more in this act

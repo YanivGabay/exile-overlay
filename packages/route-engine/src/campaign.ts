@@ -15,6 +15,8 @@ export interface CampaignInfo {
   /** Per-zone tips; verified = checked in game by us; confidence = how many guides agree. */
   zoneTips?: Record<string, ZoneTip[]>;
   presets?: Preset[];
+  /** Recipe name → why it matters while leveling. */
+  importantRecipes?: Record<string, string>;
   credits?: { key: string; title: string; creator: string; url: string; license?: string }[];
   league?: { id: string; name: string; notes: { id: string; text: string; act?: number; area?: string; kind?: "loot" | "plan" | "info"; source?: string; verified?: boolean }[] };
 }
@@ -148,4 +150,34 @@ export function tipsFor(info: CampaignInfo, areaId: string, preset: Preset | und
   return (info.zoneTips?.[areaId] ?? [])
     .filter((t) => t.style.split("/").some((s) => styles.has(s)))
     .sort((a, b) => rank[a.confidence] - rank[b.confidence]);
+}
+
+export interface RecipeStatus {
+  /** Recipes on this route the player has passed (route-wise). */
+  collected: number;
+  total: number;
+  /** Recipes in the current zone, important ones flagged. */
+  here: { name: string; why: string | null }[];
+}
+
+/** Crafting recipes from the route's {crafting} steps. */
+export function recipeStatus(guide: GuideShape, progress: GuideProgress, info: CampaignInfo): RecipeStatus {
+  const groups = stepGroups(guide);
+  const visited = visitedSet(progress);
+  const done = new Set(progress.completed);
+  let collected = 0;
+  let total = 0;
+  const here: RecipeStatus["here"] = [];
+  guide.steps.forEach((s, i) => {
+    if (s.step.type !== "fragment_step") return;
+    for (const p of s.step.parts) {
+      if (typeof p === "string" || p.type !== "crafting") continue;
+      const g = groups[i];
+      total += p.crafting_recipes.length;
+      if (done.has(s.id) || (g < progress.activeEdge && visited.has(g))) collected += p.crafting_recipes.length;
+      if (g === progress.activeEdge)
+        for (const name of p.crafting_recipes) here.push({ name, why: info.importantRecipes?.[name] ?? null });
+    }
+  });
+  return { collected, total, here };
 }

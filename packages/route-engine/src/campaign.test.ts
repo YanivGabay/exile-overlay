@@ -162,3 +162,23 @@ describe("preset contents", () => {
     }
   });
 });
+
+import { recipeStatus } from "./campaign.js";
+
+describe("crafting recipes", () => {
+  it("counts recipes and flags the important ones where they are", () => {
+    const start = recipeStatus(guide, INITIAL_PROGRESS, bundle.campaign);
+    expect(start.total).toBeGreaterThan(40);
+    expect(start.collected).toBe(0);
+    const kaom = guide.edges.indexOf("1_4_4_3");
+    const at = recipeStatus(guide, { activeEdge: kaom, completed: [] }, bundle.campaign);
+    expect(at.here.find((r) => r.name.startsWith("Socket Links"))?.why).toMatch(/4-link/);
+    expect(at.collected).toBeGreaterThan(10);
+  });
+  it("speedrun preset still collects the on-path recipes moved out of trial blocks", () => {
+    const speed = (bundle.campaign.presets ?? []).find((p) => p.id === "speedrun")!;
+    const g = compileGuide(bundle.routes, bundle.data, speed.options);
+    const names = JSON.stringify(g.steps.map((s) => s.step));
+    for (const r of ["Flask Duration - Rank 1", "Damage over Time - Rank 1", "All Attributes - Rank 1"]) expect(names).toContain(r);
+  });
+});
