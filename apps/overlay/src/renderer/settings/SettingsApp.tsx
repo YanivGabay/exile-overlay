@@ -172,7 +172,23 @@ function GuideTab({ state }: { state: AppState }) {
       <h2>Route</h2>
       <label className="toggle">
         <input type="checkbox" checked={g.options.leagueStart} onChange={(e) => setOpt({ leagueStart: e.target.checked })} />
-        League start (first character: pick up every waypoint and optional reward)
+        First character this league (waypoints and route structure)
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={g.options.trials ?? g.options.leagueStart} onChange={(e) => setOpt({ trials: e.target.checked })} />
+        Labyrinth trials (needed once per league for your ascendancy)
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={g.options.quicksilver ?? g.options.leagueStart} onChange={(e) => setOpt({ quicksilver: e.target.checked })} />
+        Quicksilver flasks: Tidal Island (Hailrake) and The Den (Great White Beast)
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={g.options.fiveLink ?? true} onChange={(e) => setOpt({ fiveLink: e.target.checked })} />
+        5-link chances: league encounters in The Slave Pens (Act 5) and The Twilight Strand (Act 6)
+      </label>
+      <label className="toggle">
+        <input type="checkbox" checked={g.options.extras ?? false} onChange={(e) => setOpt({ extras: e.target.checked })} />
+        Side rewards: Chemist's Strongbox, Karui tattoo, Silver Locket
       </label>
       <label className="toggle">
         <input type="checkbox" checked={g.options.library} onChange={(e) => setOpt({ library: e.target.checked })} />

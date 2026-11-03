@@ -10,21 +10,39 @@ export type Bandit = "None" | "Oak" | "Kraityn" | "Alira";
 
 /** Player-facing route options. Each maps to a preprocessor definition. */
 export interface GuideOptions {
+  /** First character this league (waypoints and route structure). */
   leagueStart: boolean;
   library: boolean;
   bandit: Bandit;
+  /** Labyrinth trials (plus crafting recipes in the same zones). */
+  trials?: boolean;
+  /** Tidal Island (Mercy Mission) and The Den (Great White Beast): the two Quicksilver flasks. */
+  quicksilver?: boolean;
+  /** League encounters in The Slave Pens and Act 6 Twilight Strand (5-link chance). */
+  fiveLink?: boolean;
+  /** Nice-to-have side content: Chemist's Strongbox, Karui tattoo, Silver Locket. */
+  extras?: boolean;
 }
 
 export const DEFAULT_GUIDE_OPTIONS: GuideOptions = {
   leagueStart: true,
   library: false,
   bandit: "None",
+  trials: true,
+  quicksilver: true,
+  fiveLink: true,
+  extras: false,
 };
 
 export function optionsToDefinitions(options: GuideOptions): Set<string> {
   const defs = new Set<string>();
   if (options.leagueStart) defs.add("LEAGUE_START");
   if (options.library) defs.add("LIBRARY");
+  // Older saves have no fine-grained switches: follow leagueStart like before.
+  if (options.trials ?? options.leagueStart) defs.add("TRIALS");
+  if (options.quicksilver ?? options.leagueStart) defs.add("QUICKSILVER");
+  if (options.fiveLink ?? true) defs.add("FIVE_LINK");
+  if (options.extras ?? options.leagueStart) defs.add("EXTRAS");
   switch (options.bandit) {
     case "None":
       defs.add("BANDIT_KILL");

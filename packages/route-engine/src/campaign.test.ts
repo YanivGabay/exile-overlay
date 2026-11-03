@@ -133,3 +133,32 @@ describe("zone tips and presets", () => {
     expect(ids("speedrun")).not.toContain("safe-res-kaom");
   });
 });
+
+describe("preset contents", () => {
+  const presets = bundle.campaign.presets ?? [];
+  const text = (id: string) => {
+    const g = compileGuide(bundle.routes, bundle.data, presets.find((p) => p.id === id)!.options);
+    return JSON.stringify(g.steps.map((s) => s.step));
+  };
+  it("league start: passive quests, trials, quicksilvers and 5-links, no side extras", () => {
+    const t = text("league-start");
+    expect(t).toContain("5-link body armour");
+    expect(t).toContain('"trial"');
+    expect(t).toContain("Hailrake");
+    expect(t).not.toContain("Chemist");
+    expect(t).not.toContain("Silver Locket");
+  });
+  it("speedrun: 5-links yes, trials and flask detours no", () => {
+    const t = text("speedrun");
+    expect(t).toContain("5-link body armour");
+    expect(t).not.toContain('"trial"');
+    expect(t).not.toContain("Hailrake");
+  });
+  it("every preset keeps every passive-point quest", () => {
+    for (const p of presets) {
+      const g = compileGuide(bundle.routes, bundle.data, p.options);
+      const s = campaignStatus(g, INITIAL_PROGRESS, bundle.campaign, ctx);
+      expect(s.quests.filter((q) => q.points > 0 && q.questId !== "a2q7").length).toBe(22);
+    }
+  });
+});
