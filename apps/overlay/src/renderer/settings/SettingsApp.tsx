@@ -310,6 +310,7 @@ const FEATURE_LABELS: [keyof AppState["settings"]["features"], string][] = [
   ["gemLinks", "Gem links widget (needs an imported build)"],
   ["shopping", "Gem shopping list in towns, with vendor search text"],
   ["tree", "Passive tree widget: which tree fits now, what to take next"],
+  ["search", "Vendor search panel in towns (links, movement speed, +1 wands, weapon bases)"],
 ];
 
 function LayoutTab({ state }: { state: AppState }) {
@@ -414,7 +415,7 @@ function DiagnosticsTab({ state }: { state: AppState }) {
         </tbody>
       </table>
       <div className="row">
-        <button onClick={() => void navigator.clipboard.writeText(text)}>Copy report</button>
+        <button onClick={() => void api.send({ type: "copyText", text: text })}>Copy report</button>
         <LogPathPicker state={state} />
       </div>
     </section>

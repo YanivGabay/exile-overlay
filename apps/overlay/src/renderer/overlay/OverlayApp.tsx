@@ -8,6 +8,7 @@ import { Interactive } from "./Navigation.js";
 import { GuideCard } from "./GuideCard.js";
 import { pickSkillSet } from "../../shared/skillsets.js";
 import { ShoppingList, TreeWidget } from "./BuildWidgets.js";
+import { VendorSearch } from "./VendorSearch.js";
 import { campaignStatus } from "@exile-overlay/route-engine";
 import { gemColour } from "../common/Step.js";
 
@@ -35,6 +36,11 @@ export function OverlayApp() {
         <GuideCard state={state} guide={guide} />
       </Widget>
       {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} />}
+      {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (
+        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} onChange={(l) => save("search", l)}>
+          <VendorSearch state={state} guide={guide} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
+        </Widget>
+      )}
       <Widget id="status" title="Status" layout={layoutOf("status")} editing={editing} onChange={(l) => save("status", l)}>
         <StatusWidget state={state} editing={editing} />
       </Widget>

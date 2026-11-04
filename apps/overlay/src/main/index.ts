@@ -1,4 +1,4 @@
-import { BrowserWindow, app, ipcMain, shell } from "electron";
+import { BrowserWindow, app, clipboard, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { writeFileSync } from "node:fs";
 import { AppStateStore } from "./app-state.js";
@@ -102,6 +102,9 @@ app.whenReady().then(() => {
         return { ok: true };
       case "guideUndo":
         guide.undo();
+        return { ok: true };
+      case "copyText":
+        clipboard.writeText(cmd.text);
         return { ok: true };
       case "dismissReminder":
         guide.dismissReminder(cmd.id);

@@ -1,5 +1,6 @@
 import { DIRECTION_ARROWS, DIRECTION_WORDS, type Fragments, type GuideStep, type RouteData } from "@exile-overlay/route-engine";
 import type { GuideRender } from "../../shared/guide-render.js";
+import { api } from "./api.js";
 import { Interactive } from "../overlay/Navigation.js";
 import { IconGo, IconKill, IconPortal, IconQuest, IconTown, IconTrial, IconWaypoint } from "./Icons.js";
 
@@ -131,7 +132,7 @@ function CopyChip({ text }: { text: string }) {
     <button
       className="copy-btn"
       title="Copy the vendor search text"
-      onClick={() => void navigator.clipboard.writeText(text)}
+      onClick={() => void api.send({ type: "copyText", text: text })}
     >
       copy search
     </button>

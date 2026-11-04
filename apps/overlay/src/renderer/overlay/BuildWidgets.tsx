@@ -41,7 +41,7 @@ export function ShoppingList({
         Gems you can buy now
         <Interactive className="inline">
           {searches.map((s, i) => (
-            <button key={i} className="copy-btn" title={s} onClick={() => void navigator.clipboard.writeText(s)}>
+            <button key={i} className="copy-btn" title={s} onClick={() => void api.send({ type: "copyText", text: s })}>
               copy search{searches.length > 1 ? ` ${i + 1}` : ""}
             </button>
           ))}

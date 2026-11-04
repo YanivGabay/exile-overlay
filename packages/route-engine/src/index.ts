@@ -18,3 +18,4 @@ export * from "./build.js";
 export * from "./campaign.js";
 export * from "./reminders.js";
 export * from "./tree.js";
+export * from "./search.js";

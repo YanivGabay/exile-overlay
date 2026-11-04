@@ -1,4 +1,4 @@
-import type { CampaignInfo, GuideStep, RouteData, TreeTable } from "@exile-overlay/route-engine";
+import type { CampaignInfo, GuideStep, RouteData, SearchData, TreeTable } from "@exile-overlay/route-engine";
 
 /** What the overlay needs to draw the guide; sent only when the guide is (re)compiled. */
 export interface GuideRender {
@@ -19,6 +19,8 @@ export interface GuideRender {
   } | null;
   /** Passive tree node names (null if the bundle has none). */
   tree: TreeTable | null;
+  /** Vendor search terms from game data (null if the bundle has none). */
+  search: SearchData | null;
   /** Passive-point quests, resist penalties, league notes (null in old bundles). */
   campaign: CampaignInfo | null;
   /** Why the imported build could not be used, if it failed. */

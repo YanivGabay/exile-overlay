@@ -7,7 +7,8 @@ export const DEFAULT_SETTINGS: Settings = {
   schema: 1,
   firstRunDone: false,
   game: { targetTitle: POE1_WINDOW_TITLE, clientLogPath: null },
-  features: { timer: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true },
+  features: { timer: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true },
+  search: { presets: ["ms-boots", "recipe-bases"], links: ["4-link"], gems: true },
   hotkeys: {
     nextStep: "F4",
     prevStep: "F3",
@@ -33,6 +34,8 @@ export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {
   guide: { x: 0.74, y: 0.3, width: 0.24, visible: true, opacity: 0.92, scale: 1 },
   // Left side, below the party/buff area. Shown only when a build is imported.
   gems: { x: 0.005, y: 0.22, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
+  // Bottom left; shown in towns only.
+  search: { x: 0.005, y: 0.78, width: 0.2, visible: true, opacity: 0.92, scale: 0.95 },
   // Below the gem links.
   tree: { x: 0.005, y: 0.52, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   status: { x: 0.005, y: 0.005, width: 0.18, visible: true, opacity: 0.85, scale: 1 },

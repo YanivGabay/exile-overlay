@@ -9,7 +9,7 @@ export interface Rect {
   height: number;
 }
 
-export type WidgetId = "guide" | "gems" | "tree" | "status";
+export type WidgetId = "guide" | "gems" | "tree" | "search" | "status";
 
 /**
  * Widget placement, relative to the game client area so a layout survives
@@ -63,8 +63,10 @@ export interface Settings {
     clientLogPath: string | null;
   };
   hotkeys: HotkeySettings;
+  /** Vendor search chips the player has turned on. */
+  search: { presets: string[]; links: string[]; gems: boolean };
   /** Parts of the overlay the player can switch off. */
-  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean };
+  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean };
   guide: {
     /** Route preset id from the guide bundle (league-start, speedrun, safe, new). */
     preset: string;
@@ -169,6 +171,8 @@ export type Command =
   | { type: "guideSetEdge"; edge: number }
   | { type: "guideUndo" }
   | { type: "dismissReminder"; id: string }
+  /** Copy text via the main process (the overlay never has focus, so the web clipboard API fails there). */
+  | { type: "copyText"; text: string }
   | { type: "setHover"; interactive: boolean }
   | { type: "toggleStepDone"; stepId: string }
   | { type: "selectCharacter"; name: string }

@@ -16,7 +16,7 @@ export function Reminders({ items }: { items: Reminder[] }) {
           {r.kind === "danger" && <IconWarn />} {r.text}
           <Interactive className="inline">
             {r.search && (
-              <button className="copy-btn" title="Copy the vendor search text" onClick={() => void navigator.clipboard.writeText(r.search!)}>
+              <button className="copy-btn" title="Copy the vendor search text" onClick={() => void api.send({ type: "copyText", text: r.search! })}>
                 copy search
               </button>
             )}

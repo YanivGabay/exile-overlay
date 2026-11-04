@@ -198,3 +198,18 @@ describe("shopping helpers", () => {
     expect(done.has("a3q11")).toBe(false);
   });
 });
+
+import { buildVendorSearch, termsFor, type SearchData } from "./search.js";
+describe("vendor search", () => {
+  const search = (bundle as unknown as { search: SearchData }).search;
+  it("only uses tiers that can roll at the zone's item level", () => {
+    expect(termsFor(search, "ms-boots", 10)).toEqual(["Runner", "Sprinter"]);
+    expect(termsFor(search, "ms-boots", 45)).toContain("Gazelle");
+    expect(termsFor(search, "plus1-fire", 20)).toEqual(["Flame Shaper"]);
+  });
+  it("combines links, presets and gems under 250 characters", () => {
+    const out = buildVendorSearch(search, ["ms-boots", "plus1-fire"], ["4-link"], 20, ["Sunder"]);
+    expect(out[0]).toBe('"\\w-\\w-\\w-\\w|Runner|Sprinter|Flame Shaper|Sunder"');
+    for (const s of out) expect(s.length).toBeLessThanOrEqual(250);
+  });
+});

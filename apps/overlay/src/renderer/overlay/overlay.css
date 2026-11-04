@@ -220,3 +220,8 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .shop-npc { margin-top: 2px; }
 .got { padding: 0 4px; margin-left: 2px; font-size: 0.75em; color: var(--good); border-color: transparent; background: transparent; }
 .tree-next { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; font-size: 0.9em; }
+.vsearch { display: flex; flex-direction: column; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip-btn { font-size: 0.82em; padding: 1px 7px; color: var(--ash); }
+.chip-btn.on { color: var(--town); border-color: var(--town); background: rgba(232, 198, 106, 0.12); }
+.vsearch-copy { display: flex; gap: 4px; flex-wrap: wrap; }
