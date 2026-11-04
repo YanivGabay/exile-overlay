@@ -182,3 +182,19 @@ describe("crafting recipes", () => {
     for (const r of ["Flask Duration - Rank 1", "Damage over Time - Rank 1", "All Attributes - Rank 1"]) expect(names).toContain(r);
   });
 });
+
+import { questsDone, searchStrings } from "./reminders.js";
+describe("shopping helpers", () => {
+  it("splits search text at 250 characters", () => {
+    const terms = Array.from({ length: 40 }, (_, i) => `Some Long Gem Name ${i}`);
+    const out = searchStrings(terms);
+    expect(out.length).toBeGreaterThan(1);
+    for (const s of out) expect(s.length).toBeLessThanOrEqual(250);
+    expect(searchStrings(["Sunder", "Leap Slam"])).toEqual(['"Sunder|Leap Slam"']);
+  });
+  it("knows which quests are done", () => {
+    const done = questsDone(guide, { activeEdge: guide.edges.indexOf("1_2_town"), completed: [] });
+    expect(done.has("a1q1")).toBe(true);
+    expect(done.has("a3q11")).toBe(false);
+  });
+});

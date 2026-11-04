@@ -8,7 +8,7 @@ const z=require("zlib");
 const xml=`<PathOfBuilding><Build className="Witch" ascendClassName="Elementalist" bandit="None"/><Skills>
 <SkillSet title="Act 1-3"><Skill enabled="true" label="Main"><Gem gemId="Metadata/Items/Gems/SkillGemFreezingPulse"/><Gem gemId="Metadata/Items/Gems/SupportGemArcaneSurge"/><Gem gemId="Metadata/Items/Gems/SupportGemLesserMultipleProjectiles"/></Skill></SkillSet>
 <SkillSet title="Act 4+"><Skill enabled="true" label="Main"><Gem gemId="Metadata/Items/Gems/SkillGemArmageddonBrand"/><Gem gemId="Metadata/Items/Gems/SupportGemControlledDestruction"/></Skill></SkillSet>
-</Skills></PathOfBuilding>`;
+</Skills><Tree><Spec title="Level 1-20" treeVersion="3_29" nodes="94,127"><URL>x</URL></Spec><Spec title="Level 20-40" treeVersion="3_29" nodes="94,127,223,31961,55485,1734,193"><URL>y</URL></Spec></Tree></PathOfBuilding>`;
 const code=z.deflateSync(Buffer.from(xml)).toString("base64").replace(/\+/g,"-").replace(/\//g,"_");
 require("fs").writeFileSync(process.argv[1],JSON.stringify({firstRunDone:true,characters:{_default:{name:"_default",className:null,level:null,progress:{activeEdge:0,completed:[]},pobCode:code,lastSeen:"2026-11-02T00:00:00Z"}},activeCharacter:null}));
 ' "$T/userdata/settings.json"

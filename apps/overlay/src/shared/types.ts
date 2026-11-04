@@ -9,7 +9,7 @@ export interface Rect {
   height: number;
 }
 
-export type WidgetId = "guide" | "gems" | "status";
+export type WidgetId = "guide" | "gems" | "tree" | "status";
 
 /**
  * Widget placement, relative to the game client area so a layout survives
@@ -64,7 +64,7 @@ export interface Settings {
   };
   hotkeys: HotkeySettings;
   /** Parts of the overlay the player can switch off. */
-  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean };
+  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean };
   guide: {
     /** Route preset id from the guide bundle (league-start, speedrun, safe, new). */
     preset: string;

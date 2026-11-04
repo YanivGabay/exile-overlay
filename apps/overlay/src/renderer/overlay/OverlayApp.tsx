@@ -7,6 +7,8 @@ import { Widget } from "./Widget.js";
 import { Interactive } from "./Navigation.js";
 import { GuideCard } from "./GuideCard.js";
 import { pickSkillSet } from "../../shared/skillsets.js";
+import { ShoppingList, TreeWidget } from "./BuildWidgets.js";
+import { campaignStatus } from "@exile-overlay/route-engine";
 import { gemColour } from "../common/Step.js";
 
 export function OverlayApp() {
@@ -32,15 +34,57 @@ export function OverlayApp() {
       <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} onChange={(l) => save("guide", l)}>
         <GuideCard state={state} guide={guide} />
       </Widget>
-      {guide?.build && state.settings.features?.gemLinks !== false && (
-        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
-          <GemLinks guide={guide} act={guide.areas[guide.edges[activeProfile(state).progress.activeEdge]]?.act ?? 1} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
-        </Widget>
-      )}
+      {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} />}
       <Widget id="status" title="Status" layout={layoutOf("status")} editing={editing} onChange={(l) => save("status", l)}>
         <StatusWidget state={state} editing={editing} />
       </Widget>
     </div>
+  );
+}
+
+function BuildWidgets({
+  state,
+  guide,
+  layoutOf,
+  save,
+  editing,
+}: {
+  state: AppState;
+  guide: GuideRender;
+  layoutOf: (id: WidgetId) => WidgetLayout;
+  save: (id: WidgetId, l: WidgetLayout) => void;
+  editing: boolean;
+}) {
+  const profile = activeProfile(state);
+  const areaId = guide.edges[profile.progress.activeEdge];
+  const act = guide.areas[areaId]?.act ?? 1;
+  const level = profile.level ?? state.game.character?.level ?? null;
+  const here = state.game.area?.id ?? areaId;
+  const inTown = guide.areas[here]?.isTown ?? false;
+  const questPoints = guide.campaign
+    ? campaignStatus(guide, profile.progress, guide.campaign, {
+        actOf: (id) => guide.areas[id]?.act,
+        questName: (id) => guide.quests[id]?.name ?? id,
+        killAllBandits: state.settings.guide.options.bandit === "None",
+      }).pointsDone
+    : 0;
+  const f = state.settings.features;
+  return (
+    <>
+      {f?.gemLinks !== false && (
+        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
+          {f?.shopping !== false && (
+            <ShoppingList guide={guide} progress={profile.progress} dismissed={new Set(profile.dismissed ?? [])} inTown={inTown} />
+          )}
+          <GemLinks guide={guide} act={act} level={level} />
+        </Widget>
+      )}
+      {f?.tree !== false && (
+        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} onChange={(l) => save("tree", l)}>
+          <TreeWidget guide={guide} act={act} level={level} questPoints={questPoints} />
+        </Widget>
+      )}
+    </>
   );
 }
 

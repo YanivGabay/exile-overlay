@@ -111,6 +111,8 @@ export namespace RouteData {
     name: string;
     version: string;
     url: string;
+    /** Allocated node ids (PoB's Spec "nodes" attribute). */
+    nodes?: string[];
   }
 
   export interface RequiredGem {

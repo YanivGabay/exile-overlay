@@ -101,6 +101,7 @@ export function parsePobXml(xml: string, data: GameData.Bundle): PobBuild {
       name: clean(attr(spec, "title") ?? "Default"),
       version: attr(spec, "treeVersion") ?? "",
       url: typeof url === "string" ? url.trim() : "",
+      nodes: (attr(spec, "nodes") ?? "").split(",").map((n) => n.trim()).filter(Boolean),
     });
   }
 

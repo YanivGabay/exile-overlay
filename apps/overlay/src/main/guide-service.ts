@@ -17,6 +17,7 @@ import {
   type GuideProgress,
   type PobBuild,
   type CampaignInfo,
+  type TreeTable,
 } from "@exile-overlay/route-engine";
 import { baseClassOf, type LogEvent } from "@exile-overlay/log-watcher";
 import type { AppStateStore } from "./app-state.js";
@@ -35,6 +36,7 @@ export interface GuideBundle {
   routes: string[];
   data: GameData.Bundle;
   campaign?: CampaignInfo;
+  tree?: TreeTable;
 }
 
 /** Key used for progress before the log tells us the character's name. */
@@ -474,12 +476,31 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
             className: this.build.className,
             ascendancy: this.build.ascendancy,
             gemLinks: this.build.gemLinks,
+            trees: this.build.trees,
+            vendorGems: this.vendorGems(),
           }
         : null,
       buildError: this.buildError,
       campaign: this.bundle.campaign ?? null,
+      tree: this.bundle.tree ?? null,
     };
     this.emit("guide", this.render);
+  }
+
+  /** Vendors that sell the build's gems to this class (from quest reward data). */
+  private vendorGems(): { gemId: string; questId: string; npc: string }[] {
+    if (!this.bundle || !this.build) return [];
+    const cls = this.build.className;
+    const out: { gemId: string; questId: string; npc: string }[] = [];
+    for (const g of this.build.requiredGems) {
+      for (const q of Object.values(this.bundle.data.Quests)) {
+        for (const offer of Object.values(q.reward_offers)) {
+          const v = offer?.vendor[g.id];
+          if (v && (v.classes.length === 0 || v.classes.includes(cls))) out.push({ gemId: g.id, questId: q.id, npc: v.npc });
+        }
+      }
+    }
+    return out;
   }
 
   /** Names and colours of gems used by the build (keeps the payload small). */

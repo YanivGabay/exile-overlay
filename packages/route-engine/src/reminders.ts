@@ -139,3 +139,26 @@ export function trialStatus(
   });
   return ["normal", "cruel", "merciless"].flatMap((l) => labs.get(l as TrialStatus["lab"]) ?? []);
 }
+
+/** Quest ids whose hand-in the route has passed. */
+export function questsDone(guide: GuideShape, progress: GuideProgress): Set<string> {
+  const done = new Set<string>();
+  for (const [q, edge] of questEdges(guide)) if (edge < progress.activeEdge) done.add(q);
+  return done;
+}
+
+/** Split "a|b|c" search terms into strings that fit the game's 250-character search box. */
+export function searchStrings(terms: string[], max = 250): string[] {
+  const out: string[] = [];
+  let cur: string[] = [];
+  const render = (t: string[]) => `"${t.join("|")}"`;
+  for (const term of terms) {
+    if (cur.length && render([...cur, term]).length > max) {
+      out.push(render(cur));
+      cur = [];
+    }
+    cur.push(term);
+  }
+  if (cur.length) out.push(render(cur));
+  return out;
+}

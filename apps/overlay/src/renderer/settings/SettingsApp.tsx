@@ -308,6 +308,8 @@ const FEATURE_LABELS: [keyof AppState["settings"]["features"], string][] = [
   ["zoneTips", "Zone tips"],
   ["leagueTips", "League tips link"],
   ["gemLinks", "Gem links widget (needs an imported build)"],
+  ["shopping", "Gem shopping list in towns, with vendor search text"],
+  ["tree", "Passive tree widget: which tree fits now, what to take next"],
 ];
 
 function LayoutTab({ state }: { state: AppState }) {
