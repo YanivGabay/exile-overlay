@@ -109,8 +109,8 @@ app.whenReady().then(() => {
       case "dismissReminder":
         guide.dismissReminder(cmd.id);
         return { ok: true };
-      case "setHover":
-        overlay.setHover(cmd.interactive);
+      case "setRegions":
+        overlay.setRegions(cmd.controls, cmd.widgets);
         return { ok: true };
       case "toggleStepDone":
         guide.toggleStep(cmd.stepId);

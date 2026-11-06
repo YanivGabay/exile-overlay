@@ -60,24 +60,54 @@ export class OverlayWindow {
   }
 
   private hovering = false;
+  private controls: Rect[] = [];
+  private widgets: { id: string; rect: Rect }[] = [];
+  private poll: NodeJS.Timeout | null = null;
 
   /**
-   * The library resets click-through on attach/focus without mouse
-   * forwarding; re-apply it with forwarding so the page still sees the
-   * mouse and can make its controls clickable on hover.
+   * The library resets click-through on attach/focus; re-apply our state.
    */
   private restoreClickThrough() {
     setImmediate(() => {
       if (this.window.isDestroyed() || this.state.get().overlay.editing) return;
-      this.window.setIgnoreMouseEvents(!this.hovering, { forward: true });
+      this.window.setIgnoreMouseEvents(!this.hovering);
     });
   }
 
-  /** The mouse is over a control (nav buttons, route map): accept clicks there. */
-  setHover(interactive: boolean) {
-    this.hovering = interactive;
-    if (this.state.get().overlay.editing) return;
-    this.window.setIgnoreMouseEvents(!interactive, { forward: true });
+  /** The page reports where its clickable controls and widgets are (window coordinates, DIP). */
+  setRegions(controls: Rect[], widgets: { id: string; rect: Rect }[]) {
+    this.controls = controls;
+    this.widgets = widgets;
+    this.ensurePolling();
+  }
+
+  /**
+   * Click-through everywhere except over controls, without relying on mouse
+   * forwarding (which does not reach a click-through window over some games).
+   * We read the real cursor 25 times a second and toggle click-through.
+   */
+  private ensurePolling() {
+    if (this.poll) return;
+    const inside = (p: { x: number; y: number }, r: Rect) => p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height;
+    this.poll = setInterval(() => {
+      if (this.window.isDestroyed() || !this.window.isVisible()) return;
+      const { overlay } = this.state.get();
+      if (overlay.editing || overlay.hidden) return;
+      const c = screen.getCursorScreenPoint();
+      const b = this.window.getBounds();
+      const p = { x: c.x - b.x, y: c.y - b.y };
+      const overControl = this.controls.some((r) => inside(p, r));
+      if (overControl !== this.hovering) {
+        this.hovering = overControl;
+        this.window.setIgnoreMouseEvents(!overControl);
+        console.log(`[overlay] controls ${overControl ? "clickable" : "click-through"}`);
+      }
+      const overWidget = this.widgets.find((w) => inside(p, w.rect))?.id ?? null;
+      const zone = overControl ? "control" : overWidget ? "widget" : "none";
+      if (overlay.pointer !== zone || overlay.pointerWidget !== overWidget) {
+        this.state.patch({ overlay: { pointer: zone, pointerWidget: overWidget } });
+      }
+    }, 40);
   }
 
   setEditing(editing: boolean) {

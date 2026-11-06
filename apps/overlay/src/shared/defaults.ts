@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   game: { targetTitle: POE1_WINDOW_TITLE, clientLogPath: null },
   features: { timer: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true },
   search: { presets: ["ms-boots", "recipe-bases"], links: ["4-link"], gems: true },
+  fade: { enabled: true, idleOpacity: 0.35, afterSeconds: 8 },
   hotkeys: {
     nextStep: "F4",
     prevStep: "F3",

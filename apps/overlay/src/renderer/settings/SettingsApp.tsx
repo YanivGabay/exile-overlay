@@ -329,6 +329,38 @@ function LayoutTab({ state }: { state: AppState }) {
         You can also hide it with {state.settings.hotkeys.toggleOverlay} in game, with the ✕ on the guide, or from the tray icon
         (bottom right of the taskbar; it may sit under the ^ arrow).
       </p>
+      <h2>Stay out of the way</h2>
+      <label className="toggle">
+        <input
+          type="checkbox"
+          checked={state.settings.fade?.enabled !== false}
+          onChange={(e) => void api.send({ type: "updateSettings", patch: { fade: { enabled: e.target.checked } } })}
+        />
+        Fade the overlay while I play (fully visible after a zone change and in town; almost invisible when my cursor is
+        over it)
+      </label>
+      <label className="field">
+        Faded opacity: {Math.round((state.settings.fade?.idleOpacity ?? 0.35) * 100)}%
+        <input
+          type="range"
+          min={0.1}
+          max={1}
+          step={0.05}
+          value={state.settings.fade?.idleOpacity ?? 0.35}
+          onChange={(e) => void api.send({ type: "updateSettings", patch: { fade: { idleOpacity: Number(e.target.value) } } })}
+        />
+      </label>
+      <label className="field">
+        Fade after: {state.settings.fade?.afterSeconds ?? 8} seconds in a zone
+        <input
+          type="range"
+          min={3}
+          max={30}
+          step={1}
+          value={state.settings.fade?.afterSeconds ?? 8}
+          onChange={(e) => void api.send({ type: "updateSettings", patch: { fade: { afterSeconds: Number(e.target.value) } } })}
+        />
+      </label>
       <h2>Show on the overlay</h2>
       {FEATURE_LABELS.map(([key, label]) => (
         <label className="toggle" key={key}>

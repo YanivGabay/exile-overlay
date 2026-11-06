@@ -16,6 +16,8 @@ export function Widget(props: {
   editing: boolean;
   onChange: (layout: WidgetLayout) => void;
   children: ReactNode;
+  /** Opacity override while playing (smart fade); undefined = the layout's own opacity. */
+  fade?: number;
 }) {
   const { layout, editing, onChange } = props;
   // Local copy while dragging, so we don't save on every pointer move.
@@ -55,12 +57,13 @@ export function Widget(props: {
 
   return (
     <section
+      data-widget={props.id}
       className={`widget widget-${props.id} ${editing ? "editable" : ""} ${l.visible ? "" : "hidden-widget"}`}
       style={{
         left: `${l.x * 100}%`,
         top: `${l.y * 100}%`,
         width: `${l.width * 100}%`,
-        opacity: editing ? Math.max(l.opacity, 0.6) : l.opacity,
+        opacity: editing ? Math.max(l.opacity, 0.6) : (props.fade ?? l.opacity),
         fontSize: `${l.scale * 100}%`,
       }}
       onPointerMove={move}

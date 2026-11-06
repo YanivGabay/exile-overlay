@@ -35,6 +35,7 @@ html, body.overlay-body, #root { width: 100%; height: 100%; overflow: hidden; ba
 /* ---- widget frame ---- */
 .widget {
   position: absolute;
+  transition: opacity 250ms ease;
   background: var(--iron);
   border: 1px solid var(--edge);
   border-radius: 3px;
@@ -225,3 +226,4 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .chip-btn { font-size: 0.82em; padding: 1px 7px; color: var(--ash); }
 .chip-btn.on { color: var(--town); border-color: var(--town); background: rgba(232, 198, 106, 0.12); }
 .vsearch-copy { display: flex; gap: 4px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .widget { transition: none; } }

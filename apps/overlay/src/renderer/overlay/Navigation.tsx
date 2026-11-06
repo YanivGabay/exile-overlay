@@ -10,20 +10,13 @@ import type { GuideRender } from "../../shared/guide-render.js";
  * mode. The rest of the overlay stays click-through, and clicks never take
  * keyboard focus from the game.
  */
-const IN_OVERLAY = document.body.classList.contains("overlay-body");
-const hover = (interactive: boolean) => IN_OVERLAY && void api.send({ type: "setHover", interactive });
-
+/**
+ * Marks controls that should take clicks. The main process reads the real
+ * cursor position and makes the overlay clickable only over these areas
+ * (see RegionReporter); everywhere else it stays click-through.
+ */
 export function Interactive({ children, className = "" }: { children: ReactNode; className?: string }) {
-  useEffect(() => () => void hover(false), []);
-  return (
-    <span
-      className={`interactive ${className}`}
-      onPointerEnter={() => hover(true)}
-      onPointerLeave={() => hover(false)}
-    >
-      {children}
-    </span>
-  );
+  return <span className={`interactive ${className}`}>{children}</span>;
 }
 
 export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOpen: boolean; onToggleMap: () => void }) {

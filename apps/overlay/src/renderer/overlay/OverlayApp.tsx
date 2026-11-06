@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { activeProfile, api, useAppState, useGuide } from "../common/api.js";
 import { DEFAULT_WIDGET_LAYOUT, resolutionKey } from "../../shared/defaults.js";
 import type { AppState, WidgetId, WidgetLayout } from "../../shared/types.js";
@@ -9,12 +9,42 @@ import { GuideCard } from "./GuideCard.js";
 import { pickSkillSet } from "../../shared/skillsets.js";
 import { ShoppingList, TreeWidget } from "./BuildWidgets.js";
 import { VendorSearch } from "./VendorSearch.js";
+import { RegionReporter } from "./RegionReporter.js";
 import { campaignStatus } from "@exile-overlay/route-engine";
 import { gemColour } from "../common/Step.js";
+
+/**
+ * Smart fade: widgets are fully visible right after a zone change and in
+ * town, then fade while you play. If the cursor is over a widget (you are
+ * fighting or walking there) it almost disappears; over its controls it is
+ * fully visible and clickable.
+ */
+function useFade(state: AppState | null, guide: GuideRender | null) {
+  const areaId = state?.game.area?.id ?? null;
+  const after = (state?.settings.fade?.afterSeconds ?? 8) * 1000;
+  const [freshUntil, setFreshUntil] = useState(0);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    setFreshUntil(Date.now() + after);
+    const t = setTimeout(() => tick((n) => n + 1), after + 50);
+    return () => clearTimeout(t);
+  }, [areaId, after]);
+  return (id: WidgetId, base: number): number | undefined => {
+    if (!state) return undefined;
+    const f = state.settings.fade;
+    const o = state.overlay;
+    if (!f?.enabled || o.editing) return undefined;
+    if (o.pointerWidget === id) return o.pointer === "control" ? 1 : 0.12;
+    const inTown = areaId ? guide?.areas[areaId]?.isTown ?? false : false;
+    if (inTown || Date.now() < freshUntil) return base;
+    return Math.min(base, f.idleOpacity);
+  };
+}
 
 export function OverlayApp() {
   const state = useAppState();
   const guide = useGuide();
+  const fadeOf = useFade(state, guide);
   if (!state) return null;
   const { overlay } = state;
   const editing = overlay.editing;
@@ -26,18 +56,20 @@ export function OverlayApp() {
   const res = bounds ? resolutionKey(bounds.width, bounds.height) : "unknown";
   const saved = state.settings.layouts[res] ?? {};
   const layoutOf = (id: WidgetId): WidgetLayout => ({ ...DEFAULT_WIDGET_LAYOUT[id], ...saved[id] });
+  const fade = (id: WidgetId) => fadeOf(id, layoutOf(id).opacity);
   const save = (id: WidgetId, layout: WidgetLayout) =>
     void api.send({ type: "setWidgetLayout", resolution: res, widget: id, layout });
 
   return (
     <div className={`overlay-root ${editing ? "editing" : ""}`}>
+      <RegionReporter />
       {editing && <EditBar resolution={res} />}
-      <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} onChange={(l) => save("guide", l)}>
+      <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} onChange={(l) => save("guide", l)}>
         <GuideCard state={state} guide={guide} />
       </Widget>
-      {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} />}
+      {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} />}
       {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (
-        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} onChange={(l) => save("search", l)}>
+        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} fade={fade("search")} onChange={(l) => save("search", l)}>
           <VendorSearch state={state} guide={guide} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
         </Widget>
       )}
@@ -54,12 +86,14 @@ function BuildWidgets({
   layoutOf,
   save,
   editing,
+  fade,
 }: {
   state: AppState;
   guide: GuideRender;
   layoutOf: (id: WidgetId) => WidgetLayout;
   save: (id: WidgetId, l: WidgetLayout) => void;
   editing: boolean;
+  fade: (id: WidgetId) => number | undefined;
 }) {
   const profile = activeProfile(state);
   const areaId = guide.edges[profile.progress.activeEdge];
@@ -78,7 +112,7 @@ function BuildWidgets({
   return (
     <>
       {f?.gemLinks !== false && (
-        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} onChange={(l) => save("gems", l)}>
+        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} fade={fade("gems")} onChange={(l) => save("gems", l)}>
           {f?.shopping !== false && (
             <ShoppingList guide={guide} progress={profile.progress} dismissed={new Set(profile.dismissed ?? [])} inTown={inTown} />
           )}
@@ -86,7 +120,7 @@ function BuildWidgets({
         </Widget>
       )}
       {f?.tree !== false && (
-        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} onChange={(l) => save("tree", l)}>
+        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} fade={fade("tree")} onChange={(l) => save("tree", l)}>
           <TreeWidget guide={guide} act={act} level={level} questPoints={questPoints} />
         </Widget>
       )}

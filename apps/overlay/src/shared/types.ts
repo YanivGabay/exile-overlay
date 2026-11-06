@@ -65,6 +65,8 @@ export interface Settings {
   hotkeys: HotkeySettings;
   /** Vendor search chips the player has turned on. */
   search: { presets: string[]; links: string[]; gems: boolean };
+  /** Fade the guide while playing, and get out of the way when the cursor is over it. */
+  fade: { enabled: boolean; idleOpacity: number; afterSeconds: number };
   /** Parts of the overlay the player can switch off. */
   features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean };
   guide: {
@@ -97,6 +99,9 @@ export interface OverlayStatus {
   /** Edit mode: the overlay takes mouse input and widgets can be moved. */
   editing: boolean;
   hidden: boolean;
+  /** Where the mouse is over the overlay: on a control, on a widget, or neither. */
+  pointer?: "control" | "widget" | "none";
+  pointerWidget?: string | null;
 }
 
 export interface GameStatus {
@@ -173,7 +178,7 @@ export type Command =
   | { type: "dismissReminder"; id: string }
   /** Copy text via the main process (the overlay never has focus, so the web clipboard API fails there). */
   | { type: "copyText"; text: string }
-  | { type: "setHover"; interactive: boolean }
+  | { type: "setRegions"; controls: Rect[]; widgets: { id: string; rect: Rect }[] }
   | { type: "toggleStepDone"; stepId: string }
   | { type: "selectCharacter"; name: string }
   | { type: "importPob"; input: string }
