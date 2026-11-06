@@ -219,7 +219,7 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .shopping { margin-bottom: 6px; padding: 4px 6px; border-left: 2px solid var(--town); background: rgba(232, 198, 106, 0.08); font-size: 0.88em; }
 .shop-head { color: var(--town); font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .shop-npc { margin-top: 2px; }
-.got { padding: 0 4px; margin-left: 2px; font-size: 0.75em; color: var(--good); border-color: transparent; background: transparent; }
+.got { padding: 0 0 0 4px; margin-left: 1px; font-size: 0.75em; color: var(--good); border-color: transparent; background: transparent; }
 .tree-next { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; font-size: 0.9em; }
 .vsearch { display: flex; flex-direction: column; gap: 6px; }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }

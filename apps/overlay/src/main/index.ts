@@ -68,7 +68,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC.getState, () => state.get());
   ipcMain.handle(IPC.getGuide, () => guide.getRender());
-  ipcMain.handle(IPC.command, async (_e, cmd: Command) => {
+  const clickTest = process.env.EXILE_OVERLAY_CLICKTEST ? new Array<string>() : null;
+  ipcMain.handle(IPC.command, async (e, cmd: Command) => {
+    if (cmd.type !== "setRegions") console.log(`[cmd] ${cmd.type}`);
     switch (cmd.type) {
       case "updateSettings":
         state.updateSettings(cmd.patch);
@@ -104,13 +106,16 @@ app.whenReady().then(() => {
         guide.undo();
         return { ok: true };
       case "copyText":
-        clipboard.writeText(cmd.text);
+        // Click test: record instead of overwriting the user's clipboard.
+        if (clickTest) clickTest.push(cmd.text);
+        else clipboard.writeText(cmd.text);
         return { ok: true };
       case "dismissReminder":
         guide.dismissReminder(cmd.id);
         return { ok: true };
       case "setRegions":
-        overlay.setRegions(cmd.controls, cmd.widgets);
+        // Only the real overlay window's layout drives click-through.
+        if (e.sender === overlay.window.webContents) overlay.setRegions(cmd.controls, cmd.widgets);
         return { ok: true };
       case "toggleStepDone":
         guide.toggleStep(cmd.stepId);
@@ -178,7 +183,9 @@ app.whenReady().then(() => {
       timer = setTimeout(async () => {
         const img = await cap.webContents.capturePage();
         const label = `${s.game.inGame === false ? "outOfGame" : s.tracking?.kind ?? "start"}-${s.game.area?.id ?? "none"}`;
-        writeFileSync(join(captureDir, `${String(++n).padStart(2, "0")}-${label}.png`), img.toPNG());
+        const name = `${String(++n).padStart(2, "0")}-${label}`;
+        writeFileSync(join(captureDir, `${name}.png`), img.toPNG());
+        if (clickTest) writeFileSync(join(captureDir, `${name}.clicks.json`), JSON.stringify(await runClickTest(cap, clickTest), null, 1));
       }, 700);
     });
   }
@@ -215,3 +222,35 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   /* tray app: do nothing */
 });
+
+/**
+ * Offscreen click check: every visible button must sit inside a reported
+ * clickable region, and real input events on copy buttons and chips must
+ * reach the main process.
+ */
+async function runClickTest(win: BrowserWindow, copied: string[]) {
+  type Btn = { label: string; x: number; y: number; covered: boolean; kind: string };
+  const buttons: Btn[] = await win.webContents.executeJavaScript(`(() => {
+    const regions = window.__regions ? window.__regions().controls : [];
+    const inside = (x, y) => regions.some((r) => x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height);
+    return [...document.querySelectorAll("button")].filter((b) => !b.disabled && b.offsetParent !== null).map((b) => {
+      const r = b.getBoundingClientRect();
+      const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+      const kind = b.classList.contains("copy-btn") || b.classList.contains("primary") ? "copy" : b.classList.contains("chip-btn") ? "chip" : "other";
+      return { label: (b.title || b.textContent || "").trim().slice(0, 40), x, y, covered: inside(x, y), kind };
+    });
+  })()`);
+  const results: { label: string; kind: string; covered: boolean; clicked?: boolean }[] = [];
+  for (const b of buttons) {
+    const r: (typeof results)[number] = { label: b.label, kind: b.kind, covered: b.covered };
+    if (b.kind === "copy") {
+      const before = copied.length;
+      win.webContents.sendInputEvent({ type: "mouseDown", x: b.x, y: b.y, button: "left", clickCount: 1 });
+      win.webContents.sendInputEvent({ type: "mouseUp", x: b.x, y: b.y, button: "left", clickCount: 1 });
+      await new Promise((res) => setTimeout(res, 200));
+      r.clicked = copied.length > before;
+    }
+    results.push(r);
+  }
+  return { uncovered: results.filter((r) => !r.covered).length, copyFailed: results.filter((r) => r.clicked === false).length, results };
+}

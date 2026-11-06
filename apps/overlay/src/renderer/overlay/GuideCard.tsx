@@ -83,6 +83,9 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
   const area = guide.areas[card.areaId];
   const act = area?.act ?? 1;
   const level = profile.level ?? state.game.character?.level ?? null;
+  // Tips for the zone the player is actually in (a side zone off the route too), else the route's zone.
+  const here = state.game.area?.id;
+  const tipArea = here && guide.areas[here] && !guide.areas[here].isTown ? here : card.areaId;
 
   const fragmentSteps = [...card.todo, ...(card.leave ? [card.leave] : [])]
     .map((s) => s.step)
@@ -182,7 +185,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
       ))}
       {state.settings.features?.zoneTips !== false && guide.campaign && (
         <ZoneTips
-          tips={tipsFor(guide.campaign, card.areaId, guide.campaign.presets?.find((p) => p.id === state.settings.guide.preset))}
+          tips={tipsFor(guide.campaign, tipArea, guide.campaign.presets?.find((p) => p.id === state.settings.guide.preset))}
           credits={guide.campaign.credits ?? []}
         />
       )}
