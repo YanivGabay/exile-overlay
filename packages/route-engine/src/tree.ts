@@ -12,20 +12,40 @@ export interface TreeTable {
 }
 
 /**
- * Pick the entry whose title fits where the player is: "Act 1-3", "Act 4",
- * "Level 12-28", "lvl 38+", "1-12". Falls back to the first.
+ * Pick the entry whose title fits where the player is:
+ *  - ranges: "Act 1-3", "Level 12-28", "1-12", "lvl 80-92 Early 6 link";
+ *  - open ends: "Act 4+", "lvl 38+";
+ *  - milestones: "LvLing Tree lvl 24", "Lvl70 after 3rd lab" apply from that level on.
+ * Level titles that apply beat act titles. Among them, a range in progress
+ * wins; otherwise the entry that starts latest at or before the player (so the
+ * last range keeps applying past its end). Ties go to the later entry.
+ * Tags like "{3}" and notes like "(Respec 18 points)" are not levels.
+ * Falls back to the first entry.
  */
 export function pickByTitle(titles: string[], act: number, level: number | null): number {
   let best = -1;
+  let bestRank = -Infinity;
   titles.forEach((title, i) => {
-    if (best !== -1) return;
-    const t = title.toLowerCase();
+    const t = title
+      .toLowerCase()
+      .replace(/\{[^}]*\}/g, "")
+      .replace(/\([^)]*\)/g, "");
     const nums = [...t.matchAll(/\d+/g)].map((m) => Number(m[0]));
     if (!nums.length) return;
+    const isAct = /\bact/.test(t);
+    const value = isAct ? act : level;
+    if (value === null) return;
     const lo = nums[0];
-    const hi = t.includes("+") ? Infinity : nums[1] ?? nums[0];
-    const value = /\bact/.test(t) ? act : level;
-    if (value !== null && value >= lo && value <= hi) best = i;
+    const hi = t.includes("+") ? Infinity : nums.length > 1 && nums[1] > lo ? nums[1] : isAct ? lo : Infinity;
+    if (value < lo) return;
+    // Level titles beat act titles (after the campaign the act stays 10);
+    // an explicit range in progress beats one that only started earlier.
+    const isRange = t.includes("+") || (nums.length > 1 && nums[1] > lo) || isAct;
+    const rank = (isAct ? 0 : 2e6) + (isRange && value <= hi ? 1e6 : 0) + lo;
+    if (rank >= bestRank) {
+      best = i;
+      bestRank = rank;
+    }
   });
   return best === -1 ? 0 : best;
 }
