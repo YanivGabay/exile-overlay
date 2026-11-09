@@ -263,7 +263,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           <kbd>{state.settings.hotkeys.toggleEdit}</kbd> move or click the overlay · <kbd>{state.settings.hotkeys.toggleOverlay}</kbd> hide
         </div>
       )}
-      {state.settings.features?.timer !== false && <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} />}
+      {state.settings.features?.timer !== false && <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} showPace={state.settings.features?.pace !== false} />}
       {tipsOpen && (
         <ul className="tips">
           {tips.map((t) => (

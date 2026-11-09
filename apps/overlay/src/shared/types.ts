@@ -68,7 +68,7 @@ export interface Settings {
   /** Fade the guide while playing, and get out of the way when the cursor is over it. */
   fade: { enabled: boolean; idleOpacity: number; afterSeconds: number };
   /** Parts of the overlay the player can switch off. */
-  features: { timer: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean };
+  features: { timer: boolean; pace?: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean };
   guide: {
     /** Route preset id from the guide bundle (league-start, speedrun, safe, new). */
     preset: string;

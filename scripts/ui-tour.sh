@@ -39,7 +39,7 @@ stop
 node -e '
 const fs=require("fs");const s=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
 const code=fs.readFileSync(process.argv[2],"utf8").trim();
-s.firstRunDone=true; s.characters=s.characters||{}; s.characters.Tour_Witch={...(s.characters.Tour_Witch||{}),name:"Tour_Witch",className:"Witch",level:14,progress:s.characters.Tour_Witch?.progress||{activeEdge:0,completed:[]},pobCode:code,lastSeen:"2026-11-09T00:00:00Z"};
+s.firstRunDone=true; s.runs=[{character:"Old_Run",date:"2026-08-01T00:00:00Z",totalMs:3000000,actSplits:Object.fromEntries(Array.from({length:11},(_,i)=>[i+1,i*5000]))}]; s.characters=s.characters||{}; s.characters.Tour_Witch={...(s.characters.Tour_Witch||{}),name:"Tour_Witch",className:"Witch",level:14,progress:s.characters.Tour_Witch?.progress||{activeEdge:0,completed:[]},pobCode:code,lastSeen:"2026-11-09T00:00:00Z"};
 fs.writeFileSync(process.argv[1],JSON.stringify(s));' "$T/userdata-tour/settings.json" "$POB"
 start
 for a in 1_1_3 1_1_4_1 1_1_4_0 1_1_5 1_1_town; do enter $a; done

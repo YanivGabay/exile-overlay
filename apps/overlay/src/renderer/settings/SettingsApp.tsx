@@ -314,6 +314,7 @@ function HotkeysTab({ state }: { state: AppState }) {
 
 const FEATURE_LABELS: [keyof AppState["settings"]["features"], string][] = [
   ["timer", "Campaign timer, deaths and levels per hour"],
+    ["pace", "Pace against your best run (\"1:12 ahead in Act 3\")"],
   ["reminders", "Reminders (movement speed boots, weapon recipes, vendor gems, danger zones)"],
   ["zoneTips", "Zone tips"],
   ["leagueTips", "League tips link"],

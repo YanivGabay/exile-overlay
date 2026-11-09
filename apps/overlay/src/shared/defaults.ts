@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   schema: 1,
   firstRunDone: false,
   game: { targetTitle: POE1_WINDOW_TITLE, clientLogPath: null },
-  features: { timer: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true },
+  features: { timer: true, pace: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true },
   search: { presets: ["ms-boots", "recipe-bases"], links: ["4-link"], gems: true },
   fade: { enabled: true, idleOpacity: 0.35, afterSeconds: 8 },
   hotkeys: {

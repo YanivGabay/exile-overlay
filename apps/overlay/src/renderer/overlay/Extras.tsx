@@ -3,7 +3,7 @@ import type { Reminder, TrialStatus } from "@exile-overlay/route-engine";
 import { api } from "../common/api.js";
 import { IconWarn } from "../common/Icons.js";
 import { Interactive } from "./Navigation.js";
-import { compareSplit, formatDuration, liveElapsed, runSummary, type FinishedRun, type RunTimer } from "../../shared/timer.js";
+import { formatDuration, liveElapsed, paceAgainstBest, paceText, runSummary, type FinishedRun, type RunTimer } from "../../shared/timer.js";
 import type { CharacterProfile } from "../../shared/types.js";
 
 /** Up to two reminders, newest progression first; each can be dismissed. */
@@ -49,11 +49,14 @@ export function TimerStrip({
   runs,
   act,
   level,
+  showPace = true,
 }: {
   profile: CharacterProfile;
   runs: FinishedRun[];
   act: number;
   level: number | null;
+  /** Show pace against the personal best. */
+  showPace?: boolean;
 }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -64,7 +67,7 @@ export function TimerStrip({
   if (!t) return null;
   const elapsed = liveElapsed(t, now);
   const actStart = t.actSplits[act] ?? 0;
-  const cmp = compareSplit(runs, act + 1);
+  const pace = showPace ? paceAgainstBest(t, runs, profile.name, now) : null;
   const hours = elapsed / 3_600_000;
   const levelsPerHour = level !== null && hours > 0.25 ? (level - t.startLevel) / hours : null;
   return (
@@ -72,10 +75,12 @@ export function TimerStrip({
       <span className="time">{formatDuration(elapsed)}</span>
       <span>
         Act {act} {formatDuration(Math.max(0, elapsed - actStart))}
-        {cmp.best !== null && (
-          <span className={elapsed <= cmp.best ? "ok" : "warn"}> (best to Act {act + 1}: {formatDuration(cmp.best)})</span>
-        )}
       </span>
+      {pace && (
+        <span className={pace.deltaMs <= 0 ? "ok" : "warn"} title="Compared with your fastest full campaign on another character">
+          {paceText(pace)}
+        </span>
+      )}
       {t.deaths > 0 && <span>{t.deaths} {t.deaths === 1 ? "death" : "deaths"}</span>}
       {levelsPerHour !== null && <span>{levelsPerHour.toFixed(1)} levels/hour</span>}
     </div>

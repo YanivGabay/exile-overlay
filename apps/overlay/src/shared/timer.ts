@@ -155,3 +155,45 @@ export function runSummary(r: RunSummaryInput): string {
   lines.push("Tracked with Exile Overlay");
   return lines.join("\n");
 }
+
+export interface Pace {
+  /** The act being compared (the latest act this character has reached). */
+  act: number;
+  /** Negative = ahead of the personal best, positive = behind (ms). */
+  deltaMs: number;
+  /**
+   * "split": difference when this act was reached.
+   * "live": past the best run's finish of this act, so behind by at least this much and growing.
+   */
+  kind: "split" | "live";
+}
+
+/**
+ * Live pace against the personal best (fastest stored full run of another
+ * character). Uses only this character's timer splits, which record the first
+ * time each act was reached, so guide undo/jumps and character switches do not
+ * change it. Null when there is nothing fair to compare.
+ */
+export function paceAgainstBest(t: RunTimer | undefined, runs: FinishedRun[], character: string, now: number): Pace | null {
+  if (!t || !t.fullRun || t.finishedAt !== null) return null;
+  const others = runs.filter((r) => r.character !== character);
+  if (!others.length) return null;
+  const best = others.reduce((a, b) => (b.totalMs < a.totalMs ? b : a));
+  const reached = Object.keys(t.actSplits).map(Number).filter((a) => a >= 1 && a <= 10);
+  if (!reached.length) return null;
+  const act = Math.max(...reached);
+  const elapsed = liveElapsed(t, now);
+  const bestEnd = best.actSplits[act + 1];
+  if (typeof bestEnd === "number" && elapsed > bestEnd) return { act, deltaMs: elapsed - bestEnd, kind: "live" };
+  const mine = t.actSplits[act];
+  const theirs = best.actSplits[act];
+  if (act < 2 || typeof theirs !== "number") return null;
+  return { act, deltaMs: mine - theirs, kind: "split" };
+}
+
+/** "1:12 ahead in Act 3" / "0:40 behind in Act 3" / "even in Act 3". */
+export function paceText(p: Pace): string {
+  const s = Math.round(Math.abs(p.deltaMs) / 1000);
+  if (s === 0) return `even with your best in Act ${p.act}`;
+  return `${formatDuration(s * 1000)} ${p.deltaMs < 0 ? "ahead" : "behind"} in Act ${p.act}`;
+}
