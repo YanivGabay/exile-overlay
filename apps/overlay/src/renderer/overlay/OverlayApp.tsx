@@ -6,7 +6,7 @@ import type { GuideRender } from "../../shared/guide-render.js";
 import { Widget } from "./Widget.js";
 import { Interactive } from "./Navigation.js";
 import { GuideCard } from "./GuideCard.js";
-import { pickSkillSet } from "../../shared/skillsets.js";
+import { pickSkillSet, prettyTitle } from "../../shared/skillsets.js";
 import { ShoppingList, TreeWidget } from "./BuildWidgets.js";
 import { VendorSearch } from "./VendorSearch.js";
 import { RegionReporter } from "./RegionReporter.js";
@@ -41,10 +41,88 @@ function useFade(state: AppState | null, guide: GuideRender | null) {
   };
 }
 
+type Place = { top?: number; maxBody?: number };
+
+/**
+ * Keeps widgets from running under each other (e.g. a long gem list over the
+ * tree widget). Top to bottom: a widget that overlaps the one above moves down
+ * if it still fits on screen; otherwise the one above is cut off where it starts.
+ * Off while editing the layout, so positions are exactly what the player set.
+ */
+function useStacking(editing: boolean): Record<string, Place> {
+  const [places, setPlaces] = useState<Record<string, Place>>({});
+  useEffect(() => {
+    if (editing) {
+      setPlaces({});
+      return;
+    }
+    let frame = 0;
+    let last = "";
+    const run = () => {
+      frame = 0;
+      const H = window.innerHeight;
+      const W = window.innerWidth;
+      const items = [...document.querySelectorAll<HTMLElement>("section.widget[data-widget]")]
+        .map((el) => {
+          const body = el.querySelector<HTMLElement>(".widget-body");
+          const chrome = el.offsetHeight - (body?.clientHeight ?? 0);
+          return {
+            id: el.dataset.widget!,
+            x: Number(el.dataset.x) * W,
+            w: el.offsetWidth,
+            y: Number(el.dataset.y) * H,
+            h: chrome + (body?.scrollHeight ?? 0),
+            chrome,
+          };
+        })
+        .filter((i) => i.h > 0 && i.id !== "status")
+        .sort((a, b) => a.y - b.y);
+      const out: Record<string, Place> = {};
+      const placed: { id: string; x: number; w: number; top: number; h: number; chrome: number }[] = [];
+      const GAP = 6;
+      for (const it of items) {
+        let top = it.y;
+        for (const p of placed) {
+          const sideBySide = it.x >= p.x + p.w || p.x >= it.x + it.w;
+          if (sideBySide || top >= p.top + p.h + GAP || top + it.h <= p.top) continue;
+          if (p.top + p.h + GAP + it.h <= H) top = p.top + p.h + GAP;
+          else {
+            // No room below: cut the one above where this one starts.
+            p.h = Math.max(60, top - GAP - p.top);
+            out[p.id] = { ...out[p.id], maxBody: Math.max(40, p.h - p.chrome) };
+          }
+        }
+        if (top + it.h > H) out[it.id] = { ...out[it.id], maxBody: Math.max(40, H - top - it.chrome - GAP) };
+        if (top !== it.y) out[it.id] = { ...out[it.id], top: Math.round(top) };
+        placed.push({ id: it.id, x: it.x, w: it.w, top, h: Math.min(it.h, H - top), chrome: it.chrome });
+      }
+      const key = JSON.stringify(out);
+      if (key !== last) {
+        last = key;
+        setPlaces(out);
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(run);
+    };
+    const mo = new MutationObserver(schedule);
+    mo.observe(document.body, { subtree: true, childList: true, characterData: true });
+    window.addEventListener("resize", schedule);
+    schedule();
+    return () => {
+      mo.disconnect();
+      window.removeEventListener("resize", schedule);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [editing]);
+  return places;
+}
+
 export function OverlayApp() {
   const state = useAppState();
   const guide = useGuide();
   const fadeOf = useFade(state, guide);
+  const places = useStacking(state?.overlay.editing ?? false);
   if (!state) return null;
   const { overlay } = state;
   const editing = overlay.editing;
@@ -63,18 +141,18 @@ export function OverlayApp() {
   return (
     <div className={`overlay-root ${editing ? "editing" : ""}`}>
       <RegionReporter />
-      {editing && <EditBar resolution={res} />}
-      <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} onChange={(l) => save("guide", l)}>
+      {editing && <EditBar resolution={res} toggleKey={state.settings.hotkeys.toggleEdit} />}
+      <Widget id="guide" title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} place={places.guide} onChange={(l) => save("guide", l)}>
         <GuideCard state={state} guide={guide} />
       </Widget>
-      {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} />}
+      {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} places={places} />}
       {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (
-        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} fade={fade("search")} onChange={(l) => save("search", l)}>
+        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} fade={fade("search")} place={places.search} onChange={(l) => save("search", l)}>
           <VendorSearch state={state} guide={guide} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
         </Widget>
       )}
       <Widget id="status" title="Status" layout={layoutOf("status")} editing={editing} onChange={(l) => save("status", l)}>
-        <StatusWidget state={state} editing={editing} />
+        <StatusWidget state={state} editing={editing} areaName={(id) => guide?.areas[id]?.name ?? null} />
       </Widget>
     </div>
   );
@@ -87,7 +165,9 @@ function BuildWidgets({
   save,
   editing,
   fade,
+  places,
 }: {
+  places: Record<string, Place>;
   state: AppState;
   guide: GuideRender;
   layoutOf: (id: WidgetId) => WidgetLayout;
@@ -112,7 +192,7 @@ function BuildWidgets({
   return (
     <>
       {f?.gemLinks !== false && (
-        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} fade={fade("gems")} onChange={(l) => save("gems", l)}>
+        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} fade={fade("gems")} place={places.gems} onChange={(l) => save("gems", l)}>
           {f?.shopping !== false && (
             <ShoppingList guide={guide} progress={profile.progress} dismissed={new Set(profile.dismissed ?? [])} inTown={inTown} />
           )}
@@ -120,7 +200,7 @@ function BuildWidgets({
         </Widget>
       )}
       {f?.tree !== false && (
-        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} fade={fade("tree")} onChange={(l) => save("tree", l)}>
+        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} fade={fade("tree")} place={places.tree} onChange={(l) => save("tree", l)}>
           <TreeWidget guide={guide} act={act} level={level} questPoints={questPoints} />
         </Widget>
       )}
@@ -128,12 +208,13 @@ function BuildWidgets({
   );
 }
 
-function EditBar({ resolution }: { resolution: string }) {
+function EditBar({ resolution, toggleKey }: { resolution: string; toggleKey: string }) {
   return (
     <div className="edit-bar">
       <strong>Edit layout</strong>
       <span className="muted">
-        Drag a widget by its title. Drag its right edge to resize. Layout is saved for {resolution}.
+        Drag a widget by its title, drag its right edge to resize. Saved for{" "}
+        {resolution === "unknown" ? "this game resolution" : resolution.replace("x", "×")}. Press <kbd>{toggleKey}</kbd> or Done when finished.
       </span>
       <button onClick={() => void api.send({ type: "resetLayout", resolution })}>Reset layout</button>
       <button onClick={() => void api.send({ type: "openSettings" })}>Settings</button>
@@ -167,7 +248,7 @@ function GemLinks({ guide, act, level }: { guide: GuideRender; act: number; leve
   return (
     <div className="gem-links">
       <div className="gem-head">
-        <span className="gem-title">{title}</span>
+        <span className="gem-title">{prettyTitle(title)}</span>
         {titles.length > 1 && (
           <Interactive className="gem-nav">
             <button title="Previous gem setup" onClick={() => setManual((setIndex - 1 + titles.length) % titles.length)}>◀</button>
@@ -204,7 +285,7 @@ function GemLinks({ guide, act, level }: { guide: GuideRender; act: number; leve
   );
 }
 
-function StatusWidget({ state, editing }: { state: AppState; editing: boolean }) {
+function StatusWidget({ state, editing, areaName }: { state: AppState; editing: boolean; areaName: (id: string) => string | null }) {
   const problems: string[] = [];
   const { game, guide } = state;
   if (game.logStatus.kind === "searching") problems.push("Looking for the game log…");
@@ -218,7 +299,7 @@ function StatusWidget({ state, editing }: { state: AppState; editing: boolean })
           {p}
         </div>
       ))}
-      {!problems.length && <div className="muted small">Tracking {game.area ? `· ${game.area.id}` : ""}</div>}
+      {!problems.length && <div className="muted small">Following your game log{game.area ? `: you are in ${game.area.name ?? areaName(game.area.id) ?? game.area.id}` : ""}</div>}
       <button className="link small" onClick={() => void api.send({ type: "openSettings", tab: "diagnostics" })}>
         Diagnostics
       </button>

@@ -9,6 +9,7 @@ import { OverlayWindow } from "./overlay-window.js";
 import { SettingsStore } from "./settings-store.js";
 import { PRELOAD, createTray, loadPage, lockNavigation, openSettingsWindow, resourcePath } from "./windows.js";
 import { importPob } from "./pob.js";
+import { startTour } from "./tour.js";
 import updater from "electron-updater";
 import { IPC, type AppState, type Command } from "../shared/types.js";
 import { DEFAULT_WIDGET_LAYOUT } from "../shared/defaults.js";
@@ -190,7 +191,10 @@ app.whenReady().then(() => {
     });
   }
 
-  if (!captureDir) createTray({
+  const tourDir = process.env.EXILE_OVERLAY_TOUR;
+  if (tourDir) startTour(tourDir, state);
+
+  if (!captureDir && !tourDir) createTray({
     openSettings: (tab) => openSettingsWindow(tab),
     toggleEdit: () => overlay.setEditing(!state.get().overlay.editing),
     toggleHidden: () => overlay.setHidden(!state.get().overlay.hidden),
@@ -199,7 +203,7 @@ app.whenReady().then(() => {
 
   // App updates from GitHub Releases (installed builds only). Failures are silent:
   // offline, or no public release yet.
-  if (app.isPackaged && !captureDir) {
+  if (app.isPackaged && !captureDir && !tourDir) {
     const check = () => void updater.autoUpdater.checkForUpdatesAndNotify().catch(() => undefined);
     check();
     setInterval(check, 6 * 60 * 60 * 1000);
@@ -207,7 +211,7 @@ app.whenReady().then(() => {
 
   guide.start();
   void log.start();
-  if (!state.settings.firstRunDone && !captureDir) openSettingsWindow("setup");
+  if (!state.settings.firstRunDone && !captureDir && !tourDir) openSettingsWindow("setup");
 
   app.on("second-instance", () => openSettingsWindow());
   app.on("before-quit", () => {

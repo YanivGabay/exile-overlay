@@ -89,13 +89,20 @@ function SetupTab({ state, onDone }: { state: AppState; onDone: () => void }) {
           </div>
         </Check>
       </div>
-      <h2>Your keys</h2>
-      <p className="muted small">
-        {state.settings.hotkeys.nextStep} / {state.settings.hotkeys.prevStep}: next / previous zone ·{" "}
-        {state.settings.hotkeys.toggleEdit}: move and resize the overlay · {state.settings.hotkeys.toggleOverlay}: hide it.
-        Change them under Hotkeys.
-      </p>
-      <h2>Optional: import your build</h2>
+      <h2>1. How do you play this league?</h2>
+      <p className="muted small">Sets which side stops the route takes and how much help you see. You can change it any time under Guide &amp; build.</p>
+      <PresetPicker state={state} />
+      <h2>2. Your keys (in game)</h2>
+      <table className="keys">
+        <tbody>
+          <tr><td><kbd>{state.settings.hotkeys.nextStep}</kbd> / <kbd>{state.settings.hotkeys.prevStep}</kbd></td><td>next / previous zone, if the guide is off</td></tr>
+          <tr><td><kbd>{state.settings.hotkeys.resync}</kbd></td><td>jump to the zone you are in</td></tr>
+          <tr><td><kbd>{state.settings.hotkeys.toggleEdit}</kbd></td><td>move and resize the overlay</td></tr>
+          <tr><td><kbd>{state.settings.hotkeys.toggleOverlay}</kbd></td><td>hide or show it</td></tr>
+        </tbody>
+      </table>
+      <p className="muted small">Change them under Hotkeys. The guide also shows them during your first zones.</p>
+      <h2>3. Optional: import your build</h2>
       <p className="muted small">Adds "take" and "buy" steps for your build's gems, plus vendor search text.</p>
       <PobImport state={state} />
       <div className="row" style={{ marginTop: 24 }}>
@@ -108,6 +115,9 @@ function SetupTab({ state, onDone }: { state: AppState; onDone: () => void }) {
         >
           Done
         </button>
+        <span className="muted small">
+          Then log in to a character: the guide appears on the right side of the game once you enter a zone.
+        </span>
       </div>
     </section>
   );
@@ -320,7 +330,7 @@ function LayoutTab({ state }: { state: AppState }) {
     <section>
       <h1>Overlay</h1>
       <div className="row">
-        <button className="primary" onClick={() => void api.send({ type: "setHidden", hidden: !state.overlay.hidden })}>
+        <button className={state.overlay.hidden ? "primary" : ""} onClick={() => void api.send({ type: "setHidden", hidden: !state.overlay.hidden })}>
           {state.overlay.hidden ? "Show the overlay" : "Hide the overlay"}
         </button>
         <button onClick={() => void api.send({ type: "quit" })}>Quit Exile Overlay</button>
@@ -424,8 +434,8 @@ function DiagnosticsTab({ state }: { state: AppState }) {
     ["Game focused", overlay.targetFocused ? "yes" : "no", null],
     ["Log file", log.kind === "watching" ? `${log.path} (${(log.sizeBytes / 1e6).toFixed(1)} MB)` : log.kind === "error" ? log.message : "searching…", log.kind === "watching" ? true : log.kind === "error" ? false : null],
     ["Log search", diag?.logDetail ?? "", null],
-    ["Current area", game.area ? `${game.area.id} (level ${game.area.level})` : "–", null],
-    ["Character", game.character ? `${game.character.name} ${game.character.className} ${game.character.level}` : "–", null],
+    ["Current area", game.area ? `${game.area.name ?? game.area.id} (area level ${game.area.level}, ${game.area.id})` : "–", null],
+    ["Character", game.character ? `${game.character.name}, level ${game.character.level} ${game.character.className}` : "–", null],
     ["Guide", guide.state === "ready" ? `${guide.version} from ${guide.source}` : guide.message ?? guide.state, guide.state === "ready"],
     ["Hotkeys not registered", diag?.hotkeyFailures.join(", ") || "none", diag ? diag.hotkeyFailures.length === 0 : null],
     ["Settings folder", diag?.userData ?? "", null],

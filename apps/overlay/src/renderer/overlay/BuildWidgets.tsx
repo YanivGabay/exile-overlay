@@ -1,3 +1,4 @@
+import { prettyTitle } from "../../shared/skillsets.js";
 import { useMemo, useState } from "react";
 import { availablePoints, questsDone, searchStrings, treeStep, type GuideProgress, type NodeInfo } from "@exile-overlay/route-engine";
 import { api } from "../common/api.js";
@@ -97,7 +98,7 @@ export function TreeWidget({
   return (
     <div className="tree-w">
       <div className="gem-head">
-        <span className="gem-title">{step.currentName}</span>
+        <span className="gem-title">{prettyTitle(step.currentName)}</span>
         {usable > 1 && (
           <Interactive className="gem-nav">
             <button title="Previous tree" onClick={() => setManual(Math.max(0, step.current - 1))}>◀</button>
@@ -118,7 +119,7 @@ export function TreeWidget({
       {step.nextName ? (
         <div className="tree-next">
           <div>
-            Next: <strong>{step.nextName}</strong>
+            Next: <strong>{prettyTitle(step.nextName)}</strong>
             {step.nextPoints !== null && <span className="muted small"> (+{step.nextPoints - step.currentPoints} points)</span>}
           </div>
           {step.add.keystones.length > 0 && <div className="tk-kill">Keystone: {names(step.add.keystones)}</div>}
