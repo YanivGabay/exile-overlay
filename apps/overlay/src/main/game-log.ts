@@ -42,7 +42,12 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
 
   private async connect() {
     if (this.stopped) return;
-    const result = await locateClientLog("poe1", this.state.settings.game.clientLogPath);
+    const manual = this.state.settings.game.clientLogPath;
+    // Test hook: behave like a machine where the game was never installed or started.
+    const result =
+      process.env.EXILE_OVERLAY_NO_AUTODETECT && !manual
+        ? { logPath: null, processes: [], detail: "Automatic detection is off (test run)." }
+        : await locateClientLog("poe1", manual);
     this.lastDetail = result.detail;
     if (!result.logPath) {
       this.state.set("game", { ...this.state.get().game, logStatus: { kind: "searching" } });

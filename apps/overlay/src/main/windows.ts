@@ -1,5 +1,6 @@
 import { BrowserWindow, Menu, Tray, app, nativeImage, shell } from "electron";
 import { join } from "node:path";
+import type { AppStateStore } from "./app-state.js";
 
 export const PRELOAD = join(import.meta.dirname, "../preload/index.cjs");
 const RESOURCES = app.isPackaged
@@ -56,24 +57,39 @@ export function openSettingsWindow(tab?: string) {
   return settingsWindow;
 }
 
-export function createTray(actions: {
-  openSettings: (tab?: string) => void;
-  toggleEdit: () => void;
-  toggleHidden: () => void;
-  quit: () => void;
-}) {
+export function createTray(
+  state: AppStateStore,
+  actions: {
+    openSettings: (tab?: string) => void;
+    toggleEdit: () => void;
+    toggleHidden: () => void;
+    installUpdate: () => void;
+    quit: () => void;
+  },
+) {
   const tray = new Tray(nativeImage.createFromPath(resourcePath("tray.png")));
-  tray.setToolTip("Exile Overlay");
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: "Settings", click: () => actions.openSettings() },
-      { label: "Hide / show overlay", click: () => actions.toggleHidden() },
-      { label: "Edit layout", click: () => actions.toggleEdit() },
-      { label: "Diagnostics", click: () => actions.openSettings("diagnostics") },
-      { type: "separator" },
-      { label: "Quit Exile Overlay", click: () => actions.quit() },
-    ]),
-  );
+  let shownFor: string | null | undefined;
+  const build = () => {
+    const update = state.get().update;
+    const ready = update?.kind === "ready" ? update.version : null;
+    if (ready === shownFor) return;
+    shownFor = ready;
+    tray.setToolTip(ready ? `Exile Overlay: update ${ready} ready` : "Exile Overlay");
+    tray.setContextMenu(
+      Menu.buildFromTemplate([
+        ...(ready ? [{ label: `Restart to update to ${ready}`, click: () => actions.installUpdate() }, { type: "separator" as const }] : []),
+        { label: "Settings", click: () => actions.openSettings() },
+        { label: "Hide / show overlay", click: () => actions.toggleHidden() },
+        { label: "Edit layout", click: () => actions.toggleEdit() },
+        { label: "What's new", click: () => actions.openSettings("whatsnew") },
+        { label: "Diagnostics", click: () => actions.openSettings("diagnostics") },
+        { type: "separator" },
+        { label: "Quit Exile Overlay", click: () => actions.quit() },
+      ]),
+    );
+  };
+  build();
+  state.on("change", build);
   tray.on("click", () => actions.openSettings());
   return tray;
 }

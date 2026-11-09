@@ -1,4 +1,4 @@
-import { BrowserWindow, app, clipboard, ipcMain, shell } from "electron";
+import { BrowserWindow, app, clipboard, dialog, ipcMain, shell } from "electron";
 import { join } from "node:path";
 import { writeFileSync } from "node:fs";
 import { AppStateStore } from "./app-state.js";
@@ -10,7 +10,10 @@ import { SettingsStore } from "./settings-store.js";
 import { PRELOAD, createTray, loadPage, lockNavigation, openSettingsWindow, resourcePath } from "./windows.js";
 import { importPob } from "./pob.js";
 import { startTour } from "./tour.js";
-import updater from "electron-updater";
+import { AppLog } from "./app-log.js";
+import { installCrashHandlers, watchRenderer } from "./crash.js";
+import { Updates } from "./updates.js";
+import { buildReport } from "../shared/report.js";
 import { IPC, type AppState, type Command } from "../shared/types.js";
 import { DEFAULT_WIDGET_LAYOUT } from "../shared/defaults.js";
 
@@ -23,6 +26,21 @@ const GUIDES_ISSUE_URL = "https://github.com/YanivGabay/exile-overlay-guides/iss
 if (process.env.EXILE_OVERLAY_USERDATA) app.setPath("userData", process.env.EXILE_OVERLAY_USERDATA);
 
 if (!app.requestSingleInstanceLock()) app.quit();
+
+// The app's own log and friendly crash handling, before anything else can fail.
+const testRun = !!(process.env.EXILE_OVERLAY_CAPTURE || process.env.EXILE_OVERLAY_TOUR);
+const appLog = new AppLog(join(app.getPath("userData"), "logs"));
+appLog.captureConsole();
+let reportState: AppState | null = null;
+const makeReport = (error: { message: string; stack?: string; where: string } | null = null) =>
+  reportState
+    ? buildReport({ state: reportState, platform: `${process.platform} ${process.getSystemVersion()}`, electron: process.versions.electron, logTail: appLog.tail(), error })
+    : appLog.tail();
+const crashDeps = { log: appLog, report: makeReport, quiet: testRun };
+const crash = installCrashHandlers(crashDeps);
+// Every page (overlay, settings, test windows) reloads itself after a crash.
+app.on("web-contents-created", (_e, wc) => watchRenderer(wc, crashDeps, crash.friendly));
+console.log(`[app] Exile Overlay ${app.getVersion()} starting (${process.platform} ${process.getSystemVersion()}, Electron ${process.versions.electron})`);
 // Windows occlusion tracking can stop painting an always-on-top transparent window.
 app.commandLine.appendSwitch("disable-features", "CalculateNativeWinOcclusion");
 
@@ -41,6 +59,11 @@ app.whenReady().then(() => {
   if (process.env.EXILE_OVERLAY_TARGET) initial.settings.game.targetTitle = process.env.EXILE_OVERLAY_TARGET;
   if (process.env.EXILE_OVERLAY_LOG) initial.settings.game.clientLogPath = process.env.EXILE_OVERLAY_LOG;
   const state = new AppStateStore(initial, store);
+  reportState = state.get();
+  state.on("change", (s) => (reportState = s));
+  // A fresh install has nothing new to announce: start "what's new" from this version.
+  if (!state.settings.firstRunDone && !state.settings.lastSeenVersion) state.updateSettings({ lastSeenVersion: app.getVersion() });
+  const updates = new Updates(state, app.isPackaged && !testRun);
 
   const snapshot = app.isPackaged
     ? resourcePath("guides", "poe1.json")
@@ -150,6 +173,34 @@ app.whenReady().then(() => {
       case "openExternal":
         if (/^https:\/\//.test(cmd.url)) void shell.openExternal(cmd.url);
         return { ok: true };
+      case "logError":
+        appLog.write("error", `${cmd.where}: ${cmd.stack ?? cmd.message}`);
+        return { ok: true };
+      case "copyReport":
+        if (clickTest) clickTest.push("report");
+        else clipboard.writeText(makeReport());
+        return { ok: true };
+      case "openLogFolder":
+        void shell.openPath(appLog.dir);
+        return { ok: true };
+      case "pickClientLog": {
+        const parent = BrowserWindow.fromWebContents(e.sender) ?? undefined;
+        const opts = {
+          title: "Choose the game's Client.txt",
+          properties: ["openFile" as const],
+          filters: [{ name: "Path of Exile log", extensions: ["txt"] }],
+        };
+        const res = parent ? await dialog.showOpenDialog(parent, opts) : await dialog.showOpenDialog(opts);
+        if (res.canceled || !res.filePaths[0]) return { ok: false };
+        state.updateSettings({ game: { clientLogPath: res.filePaths[0] } });
+        return { ok: true, path: res.filePaths[0] };
+      }
+      case "checkUpdates":
+        updates.check();
+        return { ok: true };
+      case "installUpdate":
+        updates.install();
+        return { ok: true };
       case "quit":
         app.quit();
         return { ok: true };
@@ -161,6 +212,7 @@ app.whenReady().then(() => {
     displayScale: overlay.displayScale(),
     userData,
     defaultLayout: DEFAULT_WIDGET_LAYOUT,
+    logDir: appLog.dir,
     platform: `${process.platform} ${process.getSystemVersion()}`,
     electron: process.versions.electron,
   }));
@@ -192,22 +244,19 @@ app.whenReady().then(() => {
   }
 
   const tourDir = process.env.EXILE_OVERLAY_TOUR;
-  if (tourDir) startTour(tourDir, state);
+  if (tourDir) startTour(tourDir, state, { crashMain: () => setTimeout(() => { throw new Error("tour: test crash in main"); }, 0) });
 
-  if (!captureDir && !tourDir) createTray({
+  if (!captureDir && !tourDir) createTray(state, {
     openSettings: (tab) => openSettingsWindow(tab),
     toggleEdit: () => overlay.setEditing(!state.get().overlay.editing),
     toggleHidden: () => overlay.setHidden(!state.get().overlay.hidden),
+    installUpdate: () => updates.install(),
     quit: () => app.quit(),
   });
 
-  // App updates from GitHub Releases (installed builds only). Failures are silent:
-  // offline, or no public release yet.
-  if (app.isPackaged && !captureDir && !tourDir) {
-    const check = () => void updater.autoUpdater.checkForUpdatesAndNotify().catch(() => undefined);
-    check();
-    setInterval(check, 6 * 60 * 60 * 1000);
-  }
+  // App updates from GitHub Releases (installed builds only): download in the
+  // background, install on quit or from "Restart to update".
+  updates.start();
 
   guide.start();
   void log.start();

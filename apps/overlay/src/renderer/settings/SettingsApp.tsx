@@ -5,6 +5,9 @@ import type { Diagnostics } from "../../preload/index.js";
 import type { Bandit } from "@exile-overlay/route-engine";
 import { HotkeyInput } from "./HotkeyInput.js";
 import { compareSplit, formatDuration } from "../../shared/timer.js";
+import { logHelp } from "../../shared/log-help.js";
+import { CHANGELOG, whatsNewSince } from "../../shared/changelog.js";
+import { describeUpdate } from "../../shared/report.js";
 
 const TABS = [
   ["setup", "Setup"],
@@ -12,6 +15,7 @@ const TABS = [
   ["hotkeys", "Hotkeys"],
   ["layout", "Overlay"],
   ["diagnostics", "Diagnostics"],
+  ["whatsnew", "What's new"],
   ["about", "About"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
@@ -40,7 +44,8 @@ export function SettingsApp() {
         {tab === "hotkeys" && <HotkeysTab state={state} />}
         {tab === "layout" && <LayoutTab state={state} />}
         {tab === "diagnostics" && <DiagnosticsTab state={state} />}
-        {tab === "about" && <AboutTab />}
+        {tab === "whatsnew" && <WhatsNewTab state={state} />}
+        {tab === "about" && <AboutTab state={state} />}
       </main>
     </div>
   );
@@ -57,9 +62,28 @@ function Check({ ok, children }: { ok: boolean | null; children: React.ReactNode
   );
 }
 
+function useNow(ms: number) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  return now;
+}
+
+/** "Choose Client.txt…": a file picker in main, so the player never types a path. */
+function PickLogButton({ primary }: { primary?: boolean }) {
+  return (
+    <button className={primary ? "primary" : ""} onClick={() => void api.send({ type: "pickClientLog" })}>
+      Choose Client.txt…
+    </button>
+  );
+}
+
 function SetupTab({ state, onDone }: { state: AppState; onDone: () => void }) {
-  const { overlay, game, guide } = state;
-  const log = game.logStatus;
+  const { overlay, guide } = state;
+  const now = useNow(2000);
+  const help = logHelp(state, overlay.attachedAt ? now - overlay.attachedAt : 0);
   return (
     <section>
       <h1>Welcome</h1>
@@ -76,11 +100,17 @@ function SetupTab({ state, onDone }: { state: AppState; onDone: () => void }) {
               : `Start Path of Exile in Windowed or Windowed Fullscreen mode. Exclusive fullscreen hides overlays.`}
           </div>
         </Check>
-        <Check ok={log.kind === "watching" ? true : log.kind === "error" ? false : null}>
-          <strong>Game log</strong>
-          <div className="muted small">
-            {log.kind === "watching" ? `Reading ${log.path}` : log.kind === "error" ? log.message : "Found automatically once the game runs."}
-          </div>
+        <Check ok={help.ok}>
+          <strong>Game log: {help.title.replace(/^Game log /, "").replace(/^./, (c) => c.toLowerCase())}</strong>
+          <div className="muted small">{help.detail}</div>
+          {help.offerPicker && (
+            <div className="row" style={{ marginTop: 6 }}>
+              <PickLogButton primary />
+              {state.settings.game.clientLogPath && (
+                <button onClick={() => void api.send({ type: "updateSettings", patch: { game: { clientLogPath: null } } })}>Detect automatically</button>
+              )}
+            </div>
+          )}
         </Check>
         <Check ok={guide.state === "ready" ? true : guide.state === "error" ? false : null}>
           <strong>Guide</strong>
@@ -116,7 +146,9 @@ function SetupTab({ state, onDone }: { state: AppState; onDone: () => void }) {
           Done
         </button>
         <span className="muted small">
-          Then log in to a character: the guide appears on the right side of the game once you enter a zone.
+          {help.ok
+            ? "Then log in to a character: the guide appears on the right side of the game once you enter a zone."
+            : "You can finish setup before the game runs: the checks above turn green on their own once it starts."}
         </span>
       </div>
     </section>
@@ -428,25 +460,32 @@ function DiagnosticsTab({ state }: { state: AppState }) {
   }, []);
   const { overlay, game, guide } = state;
   const log = game.logStatus;
+  const now = useNow(2000);
+  const help = logHelp(state, overlay.attachedAt ? now - overlay.attachedAt : 0);
   const rows: [string, string, boolean | null][] = [
     ["Game window", overlay.attached ? `attached to "${state.settings.game.targetTitle}"` : `not found ("${state.settings.game.targetTitle}")`, overlay.attached],
     ["Window size", overlay.bounds ? `${overlay.bounds.width}×${overlay.bounds.height} at ${overlay.bounds.x},${overlay.bounds.y}` : "–", null],
     ["Display scale", diag?.displayScale ? `${Math.round(diag.displayScale * 100)}%` : "–", null],
     ["Game focused", overlay.targetFocused ? "yes" : "no", null],
-    ["Log file", log.kind === "watching" ? `${log.path} (${(log.sizeBytes / 1e6).toFixed(1)} MB)` : log.kind === "error" ? log.message : "searching…", log.kind === "watching" ? true : log.kind === "error" ? false : null],
+    ["Log file", log.kind === "watching" ? `${log.path} (${(log.sizeBytes / 1e6).toFixed(1)} MB)` : `${help.title}: ${help.detail}`, help.ok],
     ["Log search", diag?.logDetail ?? "", null],
     ["Current area", game.area ? `${game.area.name ?? game.area.id} (area level ${game.area.level}, ${game.area.id})` : "–", null],
     ["Character", game.character ? `${game.character.name}, level ${game.character.level} ${game.character.className}` : "–", null],
     ["Guide", guide.state === "ready" ? `${guide.version} from ${guide.source}` : guide.message ?? guide.state, guide.state === "ready"],
     ["Hotkeys not registered", diag?.hotkeyFailures.join(", ") || "none", diag ? diag.hotkeyFailures.length === 0 : null],
     ["Settings folder", diag?.userData ?? "", null],
+    ["App log", diag?.logDir ?? "", null],
+    ["Updates", state.update ? describeUpdate(state.update) : "–", state.update?.kind === "error" ? false : null],
     ["System", diag ? `${diag.platform}, Electron ${diag.electron}` : "", null],
   ];
-  const text = rows.map(([k, v]) => `${k}: ${v}`).join("\n");
+  const [copied, setCopied] = useState(false);
   return (
     <section>
       <h1>Diagnostics</h1>
-      <p className="muted small">If the overlay doesn't show up, the red line below says why. Copy this into a bug report.</p>
+      <p className="muted small">
+        If the overlay doesn't show up, the red line below says why. To report a problem, copy the report (it includes the app's recent log, without
+        account or character names) and paste it into a GitHub issue or Discord message.
+      </p>
       <table className="table diag">
         <tbody>
           {rows.map(([k, v, ok]) => (
@@ -458,7 +497,21 @@ function DiagnosticsTab({ state }: { state: AppState }) {
         </tbody>
       </table>
       <div className="row">
-        <button onClick={() => void api.send({ type: "copyText", text: text })}>Copy report</button>
+        <button
+          className="primary"
+          onClick={() => {
+            void api.send({ type: "copyReport" });
+            setCopied(true);
+          }}
+        >
+          {copied ? "Copied: paste it in your report" : "Copy report"}
+        </button>
+        <button onClick={() => void api.send({ type: "openLogFolder" })}>Open log folder</button>
+      </div>
+      <h2>Game log file</h2>
+      <p className="muted small">Found automatically from the running game. If it isn't, choose Client.txt in the game folder's logs folder.</p>
+      <div className="row">
+        <PickLogButton />
         <LogPathPicker state={state} />
       </div>
     </section>
@@ -484,10 +537,63 @@ function LogPathPicker({ state }: { state: AppState }) {
 
 // ----- About ------------------------------------------------------------------
 
-function AboutTab() {
+function UpdateBox({ state }: { state: AppState }) {
+  const u = state.update ?? { kind: "idle" as const };
+  return (
+    <div className="update-box">
+      <div>
+        <strong>Version {state.appVersion}</strong>
+        <div className={`small ${u.kind === "ready" ? "ok" : "muted"}`}>Updates: {describeUpdate(u)}</div>
+      </div>
+      <div className="spacer" />
+      {u.kind === "ready" ? (
+        <button className="primary" onClick={() => void api.send({ type: "installUpdate" })}>
+          Restart and update
+        </button>
+      ) : (
+        u.kind !== "dev" && (
+          <button disabled={u.kind === "checking" || u.kind === "downloading"} onClick={() => void api.send({ type: "checkUpdates" })}>
+            Check for updates
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+function WhatsNewTab({ state }: { state: AppState }) {
+  // Snapshot on open: the badge stays while the tab is open, even after it's marked seen.
+  const [unseen] = useState(() => whatsNewSince(state.settings.lastSeenVersion, state.appVersion));
+  // Opening this tab counts as seen.
+  useEffect(() => {
+    if (state.settings.lastSeenVersion !== state.appVersion) void api.send({ type: "updateSettings", patch: { lastSeenVersion: state.appVersion } });
+  }, [state.settings.lastSeenVersion, state.appVersion]);
+  const fresh = new Set(unseen.map((e) => e.version));
+  return (
+    <section>
+      <h1>What's new</h1>
+      <UpdateBox state={state} />
+      {CHANGELOG.map((e) => (
+        <div key={e.version} className="changelog-entry">
+          <h2>
+            {e.version} <span className="muted small">{e.date}</span> {fresh.has(e.version) && <span className="badge-new">new for you</span>}
+          </h2>
+          <ul className="small">
+            {e.items.map((i) => (
+              <li key={i}>{i}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function AboutTab({ state }: { state: AppState }) {
   return (
     <section>
       <h1>About</h1>
+      <UpdateBox state={state} />
       <p>Exile Overlay is free and open source (MIT).</p>
       <h2>What it reads and sends</h2>
       <ul className="small">

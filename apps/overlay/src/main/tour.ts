@@ -10,6 +10,10 @@ import type { AppStateStore } from "./app-state.js";
  *   shot <label>             overlay at 1920x1080 and 2560x1440 over a busy, game-like background
  *   edit on|off              layout edit mode
  *   settings <tab> <label>   the settings window on a tab
+ *   attach <seconds-ago>     pretend the game window was found that long ago (off: detach)
+ *   set <json>               merge into settings (e.g. {"lastSeenVersion":"0.0.9"})
+ *   update <json>            show an update status
+ *   crash main|overlay       throw in main / kill the overlay page, to check logging and recovery
  *   quit
  */
 const SIZES = [
@@ -27,7 +31,7 @@ const GAME_ART = `html { background:
   repeating-linear-gradient(35deg, #2a2a1e 0 14px, #3b3826 14px 22px, #1d211a 22px 40px),
   #24261c !important; }`;
 
-export function startTour(dir: string, state: AppStateStore) {
+export function startTour(dir: string, state: AppStateStore, hooks: { crashMain: () => void }) {
   const windows = SIZES.map((s) => {
     const win = new BrowserWindow({
       show: false,
@@ -71,6 +75,20 @@ export function startTour(dir: string, state: AppStateStore) {
         writeFileSync(join(dir, `${cmd[2]}.png`), (await settings.webContents.capturePage()).toPNG());
         break;
       }
+      case "attach":
+        state.patch({ overlay: cmd[1] === "off" ? { attached: false, attachedAt: null } : { attached: true, attachedAt: Date.now() - Number(cmd[1]) * 1000, bounds: { x: 0, y: 0, width: 1920, height: 1080 } } });
+        break;
+      case "set":
+        state.updateSettings(JSON.parse(cmd.slice(1).join(" ")));
+        break;
+      case "update":
+        state.set("update", JSON.parse(cmd.slice(1).join(" ")));
+        break;
+      case "crash":
+        if (cmd[1] === "main") hooks.crashMain();
+        else windows[0].win.webContents.forcefullyCrashRenderer();
+        await wait(2500);
+        break;
       case "quit":
         app.quit();
         break;

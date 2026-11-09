@@ -7,6 +7,7 @@ export interface Diagnostics {
   hotkeyFailures: string[];
   displayScale: number | null;
   userData: string;
+  logDir: string;
   platform: string;
   electron: string;
 }

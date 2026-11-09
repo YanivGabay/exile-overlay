@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { ErrorBoundary } from "../common/ErrorBoundary.js";
 import type { WidgetId, WidgetLayout } from "../../shared/types.js";
 
 const MIN_WIDTH = 0.08;
@@ -100,7 +101,9 @@ export function Widget(props: {
         className={`widget-body ${!editing && props.place?.maxBody !== undefined ? "capped" : ""}`}
         style={!editing && props.place?.maxBody !== undefined ? { maxHeight: props.place.maxBody } : undefined}
       >
-        {props.children}
+        <ErrorBoundary where={`overlay: ${props.id}`} variant="panel">
+          {props.children}
+        </ErrorBoundary>
       </div>
       {editing && <div className="resize-handle" onPointerDown={begin("resize")} title="Drag to resize" />}
     </section>

@@ -239,3 +239,7 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .edit-bar strong, .edit-bar button { white-space: nowrap; flex: none; }
 .run-summary { margin: 6px 0 8px; padding: 6px 8px; border-left: 2px solid var(--town); background: rgba(232, 198, 106, 0.08); }
 .run-summary pre { margin: 4px 0 6px; font: inherit; font-size: 0.9em; white-space: pre-wrap; color: var(--bone); }
+
+/* A panel that crashed shows one quiet line and retries on its own. */
+.panel-error { padding: 0.4em 0.6em; }
+.status .notice { color: var(--gold, #d4a54a); }

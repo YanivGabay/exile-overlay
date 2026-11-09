@@ -1,5 +1,6 @@
 import type { GuideOptions, GuideProgress, TrackOutcome } from "@exile-overlay/route-engine";
 import type { FinishedRun, RunTimer } from "./timer.js";
+import type { UpdateStatus } from "./report.js";
 
 /** Rectangle in physical screen pixels. */
 export interface Rect {
@@ -84,6 +85,8 @@ export interface Settings {
   activeCharacter: string | null;
   /** Finished full campaign runs, for best / previous / average splits. */
   runs: FinishedRun[];
+  /** Last version whose "what's new" the player saw; null on a fresh install until setup. */
+  lastSeenVersion?: string | null;
 }
 
 export type LogStatus =
@@ -102,6 +105,8 @@ export interface OverlayStatus {
   /** Where the mouse is over the overlay: on a control, on a widget, or neither. */
   pointer?: "control" | "widget" | "none";
   pointerWidget?: string | null;
+  /** When the game window was found (ms since epoch), for "can't find the log" grace time. */
+  attachedAt?: number | null;
 }
 
 export interface GameStatus {
@@ -162,6 +167,8 @@ export interface AppState {
   guide: GuideStatus;
   /** The tracker's last decision, shown in the overlay. Null until the first zone change. */
   tracking: TrackingInfo | null;
+  /** App update status (installed builds check GitHub Releases). */
+  update?: UpdateStatus;
 }
 
 /** Commands renderers send to main. */
@@ -185,6 +192,14 @@ export type Command =
   | { type: "reportStep"; stepId: string; note: string }
   | { type: "openSettings"; tab?: string }
   | { type: "openExternal"; url: string }
+  /** A renderer caught an error: log it in the app log. */
+  | { type: "logError"; where: string; message: string; stack?: string }
+  | { type: "copyReport" }
+  | { type: "openLogFolder" }
+  /** Show a file picker for Client.txt and use the chosen file. */
+  | { type: "pickClientLog" }
+  | { type: "checkUpdates" }
+  | { type: "installUpdate" }
   | { type: "quit" };
 
 export type DeepPartial<T> = {
