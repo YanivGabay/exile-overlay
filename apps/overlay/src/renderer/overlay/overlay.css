@@ -237,3 +237,5 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .widget-body.capped { overflow: hidden; -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
 .edit-bar kbd { font: inherit; padding: 0 4px; border: 1px solid var(--edge-lit); border-radius: 2px; color: var(--bone); }
 .edit-bar strong, .edit-bar button { white-space: nowrap; flex: none; }
+.run-summary { margin: 6px 0 8px; padding: 6px 8px; border-left: 2px solid var(--town); background: rgba(232, 198, 106, 0.08); }
+.run-summary pre { margin: 4px 0 6px; font: inherit; font-size: 0.9em; white-space: pre-wrap; color: var(--bone); }

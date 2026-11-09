@@ -45,6 +45,9 @@ start
 for a in 1_1_3 1_1_4_1 1_1_4_0 1_1_5 1_1_town; do enter $a; done
 lvl 12; cmd "shot o10-build-town"; sleep 3
 enter 1_1_6; cmd "shot o11-build-zone"; sleep 3
+for a in 1_2_town 1_3_town 1_4_town 1_5_town 2_6_town 2_7_town 2_8_town 2_9_town 2_10_town; do enter $a; done
+line "[INFO Client 1] : Tour_Witch has been slain."
+line "[INFO Client 1] Sin: May a new dawn arise!"; cmd "shot o12-campaign-done"; sleep 3
 cmd "settings guide s-guide-with-build"; sleep 3
 cmd "quit"
 stop

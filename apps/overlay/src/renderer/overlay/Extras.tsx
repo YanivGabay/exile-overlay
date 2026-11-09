@@ -3,7 +3,7 @@ import type { Reminder, TrialStatus } from "@exile-overlay/route-engine";
 import { api } from "../common/api.js";
 import { IconWarn } from "../common/Icons.js";
 import { Interactive } from "./Navigation.js";
-import { compareSplit, formatDuration, liveElapsed, type FinishedRun, type RunTimer } from "../../shared/timer.js";
+import { compareSplit, formatDuration, liveElapsed, runSummary, type FinishedRun, type RunTimer } from "../../shared/timer.js";
 import type { CharacterProfile } from "../../shared/types.js";
 
 /** Up to two reminders, newest progression first; each can be dismissed. */
@@ -85,7 +85,7 @@ export function TimerStrip({
 export function MapsChecklist({ items }: { items: string[] }) {
   return (
     <div className="maps-list">
-      <div className="next-zone">Campaign done. Before mapping:</div>
+      <div className="next-zone">Before mapping:</div>
       <ul className="tasks">
         {items.map((i) => (
           <li key={i} className="task">
@@ -93,6 +93,48 @@ export function MapsChecklist({ items }: { items: string[] }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** End of the campaign: the run in a few lines, ready to paste into Discord or Reddit. */
+export function RunSummaryCard({
+  profile,
+  runs,
+  gameVersion,
+}: {
+  profile: CharacterProfile;
+  runs: FinishedRun[];
+  gameVersion: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const t = profile.timer;
+  if (!t || t.finishedAt === null) return null;
+  const text = runSummary({
+    character: profile.name,
+    className: profile.className ?? null,
+    level: profile.level ?? null,
+    timer: t,
+    runs,
+    gameVersion,
+  });
+  const [headline, ...rest] = text.split("\n");
+  return (
+    <div className="run-summary">
+      <div className="next-zone">Campaign done</div>
+      <div className="small muted">{headline}</div>
+      <pre>{rest.slice(0, -1).join("\n")}</pre>
+      <Interactive className="inline">
+        <button
+          className="primary"
+          onClick={() => {
+            void api.send({ type: "copyText", text });
+            setCopied(true);
+          }}
+        >
+          {copied ? "Copied: paste it anywhere" : "Copy run summary"}
+        </button>
+      </Interactive>
     </div>
   );
 }

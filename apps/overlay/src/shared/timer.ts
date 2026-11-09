@@ -101,3 +101,57 @@ export function formatDuration(ms: number): string {
   const mm = String(m).padStart(h ? 2 : 1, "0");
   return h ? `${h}:${mm}:${String(sec).padStart(2, "0")}` : `${mm}:${String(sec).padStart(2, "0")}`;
 }
+
+export interface RunSummaryInput {
+  character: string;
+  className: string | null;
+  level: number | null;
+  timer: RunTimer;
+  /** All stored full runs (this one included, if it was a full run). */
+  runs: FinishedRun[];
+  gameVersion: string | null;
+}
+
+/** Time spent in each act (1-10) from the act splits; null where a split is missing. */
+export function actDurations(splits: Record<number, number>): (number | null)[] {
+  return Array.from({ length: 10 }, (_, i) => {
+    const a = splits[i + 1];
+    const b = splits[i + 2];
+    return typeof a === "number" && typeof b === "number" ? b - a : null;
+  });
+}
+
+/**
+ * Plain-text campaign summary to paste into Discord or Reddit: total time
+ * against the personal best, time per act with the difference to the best
+ * run's act, deaths and leveling speed.
+ */
+export function runSummary(r: RunSummaryInput): string {
+  const t = r.timer;
+  const total = t.elapsedMs;
+  const others = r.runs.filter((x) => !(x.character === r.character && x.totalMs === total));
+  const best = others.length ? others.reduce((a, b) => (b.totalMs < a.totalMs ? b : a)) : null;
+  const sign = (ms: number) => `${ms <= 0 ? "-" : "+"}${formatDuration(Math.abs(ms))}`;
+  const who = [r.className, r.level !== null ? `level ${r.level}` : null].filter(Boolean).join(", ");
+  const lines = [`${r.character}${who ? ` (${who})` : ""}: Path of Exile${r.gameVersion ? ` ${r.gameVersion}` : ""} campaign`];
+  if (!t.fullRun) lines.push(`Campaign time ${formatDuration(total)} (started mid-campaign)`);
+  else if (!best) lines.push(`Campaign time ${formatDuration(total)}: first timed run`);
+  else if (total < best.totalMs) lines.push(`Campaign time ${formatDuration(total)}: new personal best by ${formatDuration(best.totalMs - total)}`);
+  else lines.push(`Campaign time ${formatDuration(total)} (${sign(total - best.totalMs)} vs best ${formatDuration(best.totalMs)})`);
+  const mine = actDurations(t.actSplits);
+  const theirs = best ? actDurations(best.actSplits) : [];
+  const acts = mine
+    .map((d, i) => {
+      if (d === null) return null;
+      const b = theirs[i];
+      return `A${i + 1} ${formatDuration(d)}${b != null ? ` (${sign(d - b)})` : ""}`;
+    })
+    .filter(Boolean);
+  if (acts.length) lines.push(acts.join(" | "));
+  const hours = total / 3_600_000;
+  const extra = [`${t.deaths} ${t.deaths === 1 ? "death" : "deaths"}`];
+  if (r.level !== null && hours > 0.25) extra.push(`${((r.level - t.startLevel) / hours).toFixed(1)} levels/hour`);
+  lines.push(extra.join(", "));
+  lines.push("Tracked with Exile Overlay");
+  return lines.join("\n");
+}

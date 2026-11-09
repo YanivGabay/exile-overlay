@@ -20,7 +20,7 @@ import type { AppState } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Interactive, NavBar, RouteMap } from "./Navigation.js";
 import { TrackingBanner, CharacterPicker, ReportBox } from "./Banners.js";
-import { MapsChecklist, Reminders, TimerStrip, TrialsLine } from "./Extras.js";
+import { MapsChecklist, RunSummaryCard, Reminders, TimerStrip, TrialsLine } from "./Extras.js";
 
 const TRAVEL = { waypoint: "Waypoint to", portal: "Portal to", logout: "Log out to", walk: "" } as const;
 
@@ -225,6 +225,9 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           </div>
         </div>
       ) : null}
+      {profile.campaignComplete && state.settings.features?.timer !== false && (
+        <RunSummaryCard profile={profile} runs={state.settings.runs ?? []} gameVersion={state.guide.gameVersion ?? null} />
+      )}
       {(profile.campaignComplete || !card.leave) && guide.campaign?.mapsChecklist && (
         <MapsChecklist items={guide.campaign.mapsChecklist.items} />
       )}
