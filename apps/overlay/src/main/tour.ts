@@ -37,8 +37,13 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
       show: false,
       width: s.width,
       height: s.height,
+      useContentSize: true,
+      // Windows clamps windows to the screen's work area (1920x1032 on a 1080p screen)
+      // even offscreen; without this every size renders as the screen size.
+      enableLargerThanScreen: true,
       webPreferences: { offscreen: true, preload: PRELOAD, sandbox: true, contextIsolation: true },
     });
+    win.setContentSize(s.width, s.height);
     loadPage(win, "overlay");
     win.webContents.on("did-finish-load", () => void win.webContents.insertCSS(GAME_ART));
     return { ...s, win };
@@ -53,7 +58,12 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
     switch (cmd[0]) {
       case "shot":
         await wait(600);
-        for (const w of windows) writeFileSync(join(dir, `${cmd[1]}-${w.name}.png`), (await w.win.webContents.capturePage()).toPNG());
+        for (const w of windows) {
+          const img = await w.win.webContents.capturePage();
+          const { width, height } = img.getSize();
+          if (width !== w.width || height !== w.height) console.warn(`[tour] ${w.name} rendered at ${width}x${height}, not ${w.width}x${w.height}`);
+          writeFileSync(join(dir, `${cmd[1]}-${w.name}.png`), img.toPNG());
+        }
         break;
       case "edit":
         state.patch({ overlay: { editing: cmd[1] === "on" } });
