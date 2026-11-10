@@ -49,15 +49,14 @@ type Place = { top?: number; maxBody?: number };
  * Keeps widgets from running under each other (e.g. a long gem list over the
  * tree widget). Top to bottom: a widget that overlaps the one above moves down
  * if it still fits on screen; otherwise the one above is cut off where it starts.
- * Off while editing the layout, so positions are exactly what the player set.
+ * While editing, positions stay exactly what the player set; only the cutting applies.
  */
 function useStacking(editing: boolean): Record<string, Place> {
   const [places, setPlaces] = useState<Record<string, Place>>({});
   useEffect(() => {
-    if (editing) {
-      setPlaces({});
-      return;
-    }
+    // While editing, widgets stay exactly where they're dragged (no pushing down),
+    // but an upper widget is still cut where a lower one starts, so panels never
+    // pile on top of each other in edit mode.
     let frame = 0;
     let last = "";
     const run = () => {
@@ -87,7 +86,7 @@ function useStacking(editing: boolean): Record<string, Place> {
         for (const p of placed) {
           const sideBySide = it.x >= p.x + p.w || p.x >= it.x + it.w;
           if (sideBySide || top >= p.top + p.h + GAP || top + it.h <= p.top) continue;
-          if (p.top + p.h + GAP + it.h <= H) top = p.top + p.h + GAP;
+          if (!editing && p.top + p.h + GAP + it.h <= H) top = p.top + p.h + GAP;
           else {
             // No room below: cut the one above where this one starts.
             p.h = Math.max(60, top - GAP - p.top);

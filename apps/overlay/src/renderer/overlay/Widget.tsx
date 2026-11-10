@@ -98,8 +98,8 @@ export function Widget(props: {
         </header>
       )}
       <div
-        className={`widget-body ${!editing && props.place?.maxBody !== undefined ? "capped" : ""}`}
-        style={!editing && props.place?.maxBody !== undefined ? { maxHeight: props.place.maxBody } : undefined}
+        className={`widget-body ${props.place?.maxBody !== undefined ? "capped" : ""}`}
+        style={props.place?.maxBody !== undefined ? { maxHeight: props.place.maxBody } : undefined}
       >
         <ErrorBoundary where={`overlay: ${props.id}`} variant="panel">
           {props.children}

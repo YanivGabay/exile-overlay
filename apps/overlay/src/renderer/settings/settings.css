@@ -24,7 +24,7 @@ h2 { font-size: 15px; margin: 22px 0 8px; color: var(--text); }
 .table { border-collapse: collapse; width: 100%; margin: 6px 0 12px; }
 .table td { padding: 6px 8px; border-bottom: 1px solid #2a2319; vertical-align: middle; }
 .table.diag td:first-child { width: 190px; color: var(--muted); }
-.table.diag td { word-break: break-all; }
+.table.diag td { overflow-wrap: anywhere; }
 .hotkey { width: 180px; cursor: pointer; text-align: center; }
 .hotkey.recording { border-color: var(--gold); color: var(--gold); }
 .pob { display: flex; flex-direction: column; gap: 6px; max-width: 680px; }
