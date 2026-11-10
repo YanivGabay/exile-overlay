@@ -226,7 +226,7 @@ function GuideTab({ state }: { state: AppState }) {
       </label>
       <label className="toggle">
         <input type="checkbox" checked={g.options.fiveLink ?? true} onChange={(e) => setOpt({ fiveLink: e.target.checked })} />
-        5-link chances: league encounters in The Slave Pens (Act 5) and The Twilight Strand (Act 6)
+        5-link chances: league encounters in The Slave Pens (Act 5) and The Twilight Strand (Act 6) (they dropped one in 3.27 and 3.29; unconfirmed for 3.30)
       </label>
       <label className="toggle">
         <input type="checkbox" checked={g.options.extras ?? false} onChange={(e) => setOpt({ extras: e.target.checked })} />

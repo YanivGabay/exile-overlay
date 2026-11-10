@@ -50,6 +50,15 @@ describe("campaignStatus", () => {
 });
 
 describe("league notes", () => {
+  it("anything taken from a reveal or an earlier league is marked unconfirmed until checked against the patch notes", () => {
+    const notes = bundle.campaign.league?.notes ?? [];
+    const fromPreview = notes.filter((n) => /covens-reveal|5l-/.test(n.source ?? ""));
+    expect(fromPreview.length).toBeGreaterThan(0);
+    for (const n of fromPreview) expect(n.verified, n.id).toBe(false);
+    for (const n of notes) if (n.area) expect(bundle.data.Areas[n.area], n.id).toBeDefined();
+    for (const n of notes) if (n.act !== undefined) expect(n.act).toBeGreaterThanOrEqual(1);
+  });
+
   it("has the two 5-link zones as area notes with existing area ids", () => {
     const notes = bundle.campaign.league?.notes ?? [];
     const five = notes.filter((n) => n.id.startsWith("5l-"));

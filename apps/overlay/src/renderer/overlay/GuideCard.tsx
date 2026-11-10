@@ -181,6 +181,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
         <div key={n.id} className="alert loot">
           {n.area === card.areaId ? "Here: " : `In ${guide.areas[n.area!]?.name ?? n.area}: `}
           {n.text}
+          {n.verified === false && <Unconfirmed />}
         </div>
       ))}
       {state.settings.features?.zoneTips !== false && guide.campaign && (
@@ -267,7 +268,10 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
       {tipsOpen && (
         <ul className="tips">
           {tips.map((t) => (
-            <li key={t.id}>{t.text}</li>
+            <li key={t.id}>
+              {t.text}
+              {t.verified === false && <Unconfirmed />}
+            </li>
           ))}
         </ul>
       )}
@@ -334,6 +338,15 @@ function MinimalLine({ guide, card }: { guide: GuideRender; card: NonNullable<Re
         </span>
       )}
     </div>
+  );
+}
+
+/** League facts from previews or past leagues, not yet confirmed for this league's patch. */
+function Unconfirmed() {
+  return (
+    <span className="unchecked" title="Not confirmed for this league yet (from the reveal or an earlier league). Use report if it is wrong.">
+      {" "}unconfirmed
+    </span>
   );
 }
 
