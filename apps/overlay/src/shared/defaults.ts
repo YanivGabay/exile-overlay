@@ -60,3 +60,6 @@ export function deepMerge<T>(base: T, patch: DeepPartial<T> | unknown): T {
   }
   return out as T;
 }
+
+/** Progress key used before the log has told us the character's name. */
+export const DEFAULT_CHARACTER = "_default";
