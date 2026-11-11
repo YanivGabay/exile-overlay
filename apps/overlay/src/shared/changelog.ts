@@ -10,7 +10,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "0.1.0",
+    version: "0.1.1",
     date: "2026-11-13",
     items: [
       "First beta for the 3.30 league: a leveling guide that follows your game log and moves on when you change zones.",

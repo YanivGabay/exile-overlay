@@ -1,6 +1,7 @@
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { parseLine, type LogEvent } from "@exile-overlay/log-watcher";
@@ -10,7 +11,7 @@ import { SettingsStore } from "./settings-store.js";
 import { DEFAULT_SETTINGS } from "../shared/defaults.js";
 import type { AppState } from "../shared/types.js";
 
-const SNAPSHOT = new URL("../../../../guides-snapshot/poe1.json", import.meta.url).pathname;
+const SNAPSHOT = fileURLToPath(new URL("../../../../guides-snapshot/poe1.json", import.meta.url));
 
 function setup() {
   const dir = mkdtempSync(join(tmpdir(), "eo-guide-"));

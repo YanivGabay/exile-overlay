@@ -68,8 +68,9 @@ describe("locate helpers", () => {
   });
 
   it("prefers LatestClient.txt", () => {
-    const files = new Set(["/g/logs/Client.txt", "/g/logs/LatestClient.txt"]);
-    expect(logFileInInstall("/g", (p) => files.has(p.toString()))).toBe("/g/logs/LatestClient.txt");
+    const latest = join("/g", "logs", "LatestClient.txt");
+    const files = new Set([join("/g", "logs", "Client.txt"), latest]);
+    expect(logFileInInstall("/g", (p) => files.has(p.toString()))).toBe(latest);
   });
 });
 
