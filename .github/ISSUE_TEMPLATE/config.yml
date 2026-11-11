@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Wrong route step or tip
+    url: https://github.com/YanivGabay/exile-overlay-guides/issues/new?template=guide_error.yml
+    about: The guide sent you the wrong way, missed a quest, or a tip is wrong. (In game, F6 → "report" next to the step fills this in for you.)
+  - name: FAQ and known issues
+    url: https://github.com/YanivGabay/exile-overlay#faq-and-known-issues
+    about: SmartScreen warning, finding Client.txt, overlay not showing in fullscreen.

@@ -4,6 +4,7 @@ import { useNow } from "../../common/hooks.js";
 import type { Diagnostics } from "../../../preload/index.js";
 import { logHelp } from "../../../shared/log-help.js";
 import { describeUpdate } from "../../../shared/report.js";
+import { FAQ_URL } from "../../../shared/support-links.js";
 import type { AppState } from "../../../shared/types.js";
 import { LogPathPicker } from "../components/LogPathPicker.js";
 import { PickLogButton } from "../components/PickLogButton.js";
@@ -40,8 +41,12 @@ export function DiagnosticsTab({ state }: { state: AppState }) {
     <section>
       <h1>Diagnostics</h1>
       <p className="muted small">
-        If the overlay doesn't show up, the red line below says why. To report a problem, copy the report (it includes the app's recent log, without
-        account or character names) and paste it into a GitHub issue or Discord message.
+        If the overlay doesn't show up, the red line below says why; the{" "}
+        <button className="link" onClick={() => void api.send({ type: "openExternal", url: FAQ_URL })}>
+          FAQ
+        </button>{" "}
+        covers the common cases. Report a problem copies a report (the app's recent log, without account or character names) and opens the bug
+        form on GitHub: paste it there.
       </p>
       <table className="table diag">
         <tbody>
@@ -57,12 +62,13 @@ export function DiagnosticsTab({ state }: { state: AppState }) {
         <button
           className="primary"
           onClick={() => {
-            void api.send({ type: "copyReport" });
+            void api.send({ type: "reportProblem" });
             setCopied(true);
           }}
         >
-          {copied ? "Copied: paste it in your report" : "Copy report"}
+          {copied ? "Report copied: paste it in the form" : "Report a problem"}
         </button>
+        <button onClick={() => void api.send({ type: "copyReport" })}>Copy report only</button>
         <button onClick={() => void api.send({ type: "openLogFolder" })}>Open log folder</button>
       </div>
       <h2>Game log file</h2>

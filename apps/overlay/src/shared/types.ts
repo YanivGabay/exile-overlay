@@ -195,6 +195,8 @@ export type Command =
   /** A renderer caught an error: log it in the app log. */
   | { type: "logError"; where: string; message: string; stack?: string }
   | { type: "copyReport" }
+  /** Copy the report and open the bug form. */
+  | { type: "reportProblem" }
   | { type: "openLogFolder" }
   /** Show a file picker for Client.txt and use the chosen file. */
   | { type: "pickClientLog" }

@@ -1,0 +1,38 @@
+name: Bug report
+description: The overlay doesn't show up, crashes, or does something wrong (not a wrong route step).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Check the [FAQ and known issues](https://github.com/YanivGabay/exile-overlay#faq-and-known-issues) first: SmartScreen, Client.txt and exclusive fullscreen are covered there.
+        A wrong route step or tip? Use the [guide error form](https://github.com/YanivGabay/exile-overlay-guides/issues/new?template=guide_error.yml) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Diagnostics report
+      description: In the overlay, open Settings → Diagnostics → **Copy report** (or **Report a problem**, which copies it for you) and paste it here. It contains no account or character names.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Game display mode
+      options:
+        - Windowed Fullscreen
+        - Windowed
+        - Fullscreen (exclusive)
+        - Not sure
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots help, especially of where the overlay should be.

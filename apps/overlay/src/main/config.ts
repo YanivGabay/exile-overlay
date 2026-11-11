@@ -2,9 +2,6 @@
 export const DEFAULT_GUIDE_URL: string | null =
   "https://raw.githubusercontent.com/YanivGabay/exile-overlay-guides/bundles/poe1.json";
 
-/** "report" on a route step opens a pre-filled issue here. */
-export const GUIDES_ISSUE_URL = "https://github.com/YanivGabay/exile-overlay-guides/issues/new";
-
 /** Test hooks (offscreen capture, scripted tour): no tray, no dialogs, no setup window. */
 export const testEnv = {
   userData: process.env.EXILE_OVERLAY_USERDATA,

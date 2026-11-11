@@ -47,14 +47,40 @@ All keys can be changed under Settings → Hotkeys. Settings opens from the tray
 - **Never** reads or changes game memory or files, sends keys or clicks to the game, or uploads anything about you.
 - Draws in its own transparent window on top of the game; it never moves or resizes the game window.
 
-## Problems?
+## FAQ and known issues
 
-Settings → **Diagnostics** shows what the overlay sees and, in red, what's missing. **Copy report** gives you a report without your user or character names; paste it into an [issue](https://github.com/YanivGabay/exile-overlay/issues). More in [docs/install.md](docs/install.md).
+**Windows says "Windows protected your PC" when I run the installer.**
+The beta isn't code-signed yet, so SmartScreen warns about it. Click **More info** → **Run anyway**. Your browser may also call the file uncommon: choose **Keep**. The source is public and every release is built by CI from a tagged commit.
+
+**The overlay doesn't show up over the game.**
+- Set the game to **Windowed Fullscreen** (or Windowed) under Options → Graphics. In **exclusive Fullscreen**, Windows hides every overlay; this is a Windows limit, not something we can fix.
+- Log in to a character and enter a zone: the overlay hides itself on the login and character screens.
+- Check it isn't hidden: press **F7**, or use the tray icon (it may sit under the ^ arrow near the clock).
+- If the game runs as administrator, run Exile Overlay as administrator too.
+
+**It says it can't find the game log (Client.txt).**
+It's found automatically from the running game, so start the game first. If it still isn't found, Settings → Diagnostics → **Choose Client.txt…** and pick `logs\Client.txt` in the game folder:
+- Steam: `…\steamapps\common\Path of Exile\logs\Client.txt`
+- Standalone: `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`
+
+**The guide is on the wrong zone.**
+Press **Shift+F4** to jump to the zone you're in, or use undo (↶) on the guide. If a step is simply wrong, press F6 and click **report** next to it.
+
+**Is it allowed?**
+It only reads the game's log file, the same file other leveling tools read. It never reads game memory, never changes game files and never sends keys or clicks to the game. It isn't endorsed by Grinding Gear Games.
+
+**Known issues in the 0.1 beta**
+- The route data is from 3.29 with 3.30 tips added from the patch notes. Zones or bosses that changed in 3.30 may be wrong for the first days; guide fixes download by themselves within 30 minutes.
+- League tips marked "unconfirmed" come from the 3.30 reveal and aren't checked in game yet. The 5-link drops in The Slave Pens and the Act 6 Twilight Strand may not exist in 3.30.
+- Windows only, Path of Exile 1 only.
+
+Still stuck? Settings → Diagnostics → **Report a problem** copies a report (no account or character names) and opens the [bug form](https://github.com/YanivGabay/exile-overlay/issues/new?template=bug_report.yml). [Install notes](docs/install.md) have more detail.
 
 ## Contributing
 
 - **A wrong route step or tip:** press F6 in game and click **report** next to the step; it opens a pre-filled issue in [exile-overlay-guides](https://github.com/YanivGabay/exile-overlay-guides). Route fixes ship to every player within 30 minutes, without an app update.
-- **A bug in the app:** open an [issue](https://github.com/YanivGabay/exile-overlay/issues) with the Diagnostics report.
+- **A bug in the app:** Settings → Diagnostics → **Report a problem**, or open the [bug form](https://github.com/YanivGabay/exile-overlay/issues/new?template=bug_report.yml) and paste the Diagnostics report.
+- **An idea:** the [feature idea form](https://github.com/YanivGabay/exile-overlay/issues/new?template=feature_idea.yml).
 - **Code:** pull requests are welcome. Run `npm test` and `npm run typecheck` first, and keep content your own (no text or images copied from other guides).
 
 ## Development
