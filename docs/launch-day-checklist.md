@@ -2,27 +2,35 @@
 
 Launch: **Thursday Nov 13 (PST)**. Patch notes: **Wednesday Nov 11 (NZT)**, i.e. late Nov 10 UTC.
 
-## Status on Nov 10: what's in the guide and how sure we are
+## Status on Nov 11: patch notes are out
 
-The 3.30 patch notes weren't published yet. Everything 3.30-specific in the guide comes from two places: the official [Covens of Umbra FAQ](https://www.pathofexile.com/forum/view-thread/4013527), and coverage of the ExileCon reveal ([maxroll summary](https://maxroll.gg/poe/news/3-30-covens-of-umbra-reveal-summary), [PCGamesN](https://www.pcgamesn.com/path-of-exile/3-30-covens-of-umbra-exilecon-2026)). The overlay shows these items with an "unconfirmed" badge; a test fails if a reveal-sourced note loses it.
+The [3.30.0 patch notes](https://www.pathofexile.com/forum/view-thread/4013680) were posted on Nov 11. The guide now uses them (source `patch-330`); anything only from the ExileCon reveal ([maxroll summary](https://maxroll.gg/poe/news/3-30-covens-of-umbra-reveal-summary), [PCGamesN](https://www.pcgamesn.com/path-of-exile/3-30-covens-of-umbra-exilecon-2026)) keeps the "unconfirmed" badge, and a test fails if a reveal-sourced note loses it.
 
 | In the guide | Source | Status |
 |---|---|---|
-| Coven rites from the first zones; up to 3 Fates on a zone boss (Act 1 tip) | reveal coverage | unconfirmed |
+| Disrupt a Coven rite to choose a Fate for the zone boss (harder fight, better rewards) | patch notes | confirmed |
+| Rites from the first zones; up to 3 Fates per boss | reveal coverage | unconfirmed (not in the notes) |
 | Fate advice: only on bosses you kill easily, none on act bosses in hardcore | our advice | unconfirmed |
-| Wickerman limb trophies from Fated bosses; campaign drops lower tiers only | reveal coverage | unconfirmed |
-| Fated Brutus → Warden's Arm (max life) (Act 1 tip) | reveal example | unconfirmed |
-| Tiered magic/rare drops; higher tier = more sockets and links | reveal coverage | unconfirmed |
-| Some zone layouts changed, 20+ zones got a new boss | PCGamesN | unconfirmed |
-| 5-link drops in The Slave Pens and Act 6 Twilight Strand | 3.27/3.29 only; Allflame is gone ([FAQ](https://www.pathofexile.com/forum/view-thread/4013527)) | **likely gone**, unconfirmed |
+| Fated bosses drop Viscera for your Wickerman | patch notes | confirmed |
+| Wickerman slots; campaign drops lower tiers only | reveal coverage | unconfirmed |
+| Fated Brutus → arm Viscera (max life) | reveal example | unconfirmed |
+| Item tiers 2-5 on magic/rare drops **from Act 6**; more sockets/links | patch notes | confirmed |
+| Mercenaries: -30% resistances in area level 46-67, -60% at 68+ | patch notes | confirmed (new Act 6 tip) |
+| Vendors: Wisdom scrolls 15 gold, level 34-37 gems cost Alchemy, cheaper mid-campaign gambling | patch notes | confirmed (new tip) |
+| Act 7 Viridian Wildwood, Act 9 Mirage | patch notes | confirmed (new tips) |
+| Changed layouts, 20+ new zone bosses | PCGamesN | unconfirmed (not in the notes) |
+| 5-link drops in The Slave Pens and Act 6 Twilight Strand | 3.27/3.29 only; not in the notes | **likely gone**, check in game |
+| Kitava's resistance penalty | not in the notes | unchanged |
 | Scarabs gone, Threads are opt-in (maps checklist) | FAQ + reveal | Threads opt-in confirmed |
 
-**Not done yet, because it needs data that doesn't exist yet:**
-- New and removed notables: GGG's [skilltree-export](https://github.com/grindinggear/skilltree-export) still ends at 3.29.1.
-- Gem, vendor, quest and recipe changes: these need the patch notes.
-- The guide data (areas, gems) is still 3.29, so the overlay says "game 3.29".
+**What the patch notes don't change:** no player passive tree section (only ascendancy value changes and the Reliquarian shuffle), no gem removals or renames, no campaign quest or Nessa/Yeena/Clarissa/Siosa changes.
 
-## When the patch notes land (Nov 11 NZT)
+**Still waiting:**
+- **Notables:** GGG's [skilltree-export](https://github.com/grindinggear/skilltree-export) still ends at 3.29.1 (checked Nov 11). The notes list no player notable changes; diff the export when it lands.
+- **Arcane Link** (new gem: Scion reward for Breaking the Seal, also sold by Petarus and Vanja to Marauder, Duelist and Templar): `gems.json`/`quests.json` need its id and level from the 3.30 game data.
+- `poe1/manifest.json` `gameVersion` stays 3.29 until the tree and gem data are 3.30.
+
+## Patch-notes pass (done Nov 11) and what is left
 
 Work on branch `3.30-prep` in the guides repo and `ui-ux-pass` in the app.
 
