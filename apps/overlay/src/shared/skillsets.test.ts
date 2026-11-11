@@ -35,3 +35,13 @@ describe("pickSkillSet with real PoB titles (Maxroll AWoRA)", () => {
     expect(pickSkillSet(specs, 10, 93)).toBe(4);
   });
 });
+
+import { prettyTitle } from "./skillsets.js";
+describe("prettyTitle", () => {
+  it("reads like a player would say it", () => {
+    expect(prettyTitle("LvLing Tree lvl 12")).toBe("Tree level 12");
+    expect(prettyTitle("LvLing Tree lvl 92 (Respec 11) {1}")).toBe("Tree level 92 (Respec 11)");
+    expect(prettyTitle("Lvl70 after 3rd lab")).toBe("Level 70 after 3rd lab");
+    expect(prettyTitle("Act 1")).toBe("Act 1");
+  });
+});

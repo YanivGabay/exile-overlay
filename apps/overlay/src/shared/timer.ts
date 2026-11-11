@@ -101,3 +101,99 @@ export function formatDuration(ms: number): string {
   const mm = String(m).padStart(h ? 2 : 1, "0");
   return h ? `${h}:${mm}:${String(sec).padStart(2, "0")}` : `${mm}:${String(sec).padStart(2, "0")}`;
 }
+
+export interface RunSummaryInput {
+  character: string;
+  className: string | null;
+  level: number | null;
+  timer: RunTimer;
+  /** All stored full runs (this one included, if it was a full run). */
+  runs: FinishedRun[];
+  gameVersion: string | null;
+}
+
+/** Time spent in each act (1-10) from the act splits; null where a split is missing. */
+export function actDurations(splits: Record<number, number>): (number | null)[] {
+  return Array.from({ length: 10 }, (_, i) => {
+    const a = splits[i + 1];
+    const b = splits[i + 2];
+    return typeof a === "number" && typeof b === "number" ? b - a : null;
+  });
+}
+
+/**
+ * Plain-text campaign summary to paste into Discord or Reddit: total time
+ * against the personal best, time per act with the difference to the best
+ * run's act, deaths and leveling speed.
+ */
+export function runSummary(r: RunSummaryInput): string {
+  const t = r.timer;
+  const total = t.elapsedMs;
+  const others = r.runs.filter((x) => !(x.character === r.character && x.totalMs === total));
+  const best = others.length ? others.reduce((a, b) => (b.totalMs < a.totalMs ? b : a)) : null;
+  const sign = (ms: number) => `${ms <= 0 ? "-" : "+"}${formatDuration(Math.abs(ms))}`;
+  const who = [r.className, r.level !== null ? `level ${r.level}` : null].filter(Boolean).join(", ");
+  const lines = [`${r.character}${who ? ` (${who})` : ""}: Path of Exile${r.gameVersion ? ` ${r.gameVersion}` : ""} campaign`];
+  if (!t.fullRun) lines.push(`Campaign time ${formatDuration(total)} (started mid-campaign)`);
+  else if (!best) lines.push(`Campaign time ${formatDuration(total)}: first timed run`);
+  else if (total < best.totalMs) lines.push(`Campaign time ${formatDuration(total)}: new personal best by ${formatDuration(best.totalMs - total)}`);
+  else lines.push(`Campaign time ${formatDuration(total)} (${sign(total - best.totalMs)} vs best ${formatDuration(best.totalMs)})`);
+  const mine = actDurations(t.actSplits);
+  const theirs = best ? actDurations(best.actSplits) : [];
+  const acts = mine
+    .map((d, i) => {
+      if (d === null) return null;
+      const b = theirs[i];
+      return `A${i + 1} ${formatDuration(d)}${b != null ? ` (${sign(d - b)})` : ""}`;
+    })
+    .filter(Boolean);
+  if (acts.length) lines.push(acts.join(" | "));
+  const hours = total / 3_600_000;
+  const extra = [`${t.deaths} ${t.deaths === 1 ? "death" : "deaths"}`];
+  if (r.level !== null && hours > 0.25) extra.push(`${((r.level - t.startLevel) / hours).toFixed(1)} levels/hour`);
+  lines.push(extra.join(", "));
+  lines.push("Tracked with Exile Overlay");
+  return lines.join("\n");
+}
+
+export interface Pace {
+  /** The act being compared (the latest act this character has reached). */
+  act: number;
+  /** Negative = ahead of the personal best, positive = behind (ms). */
+  deltaMs: number;
+  /**
+   * "split": difference when this act was reached.
+   * "live": past the best run's finish of this act, so behind by at least this much and growing.
+   */
+  kind: "split" | "live";
+}
+
+/**
+ * Live pace against the personal best (fastest stored full run of another
+ * character). Uses only this character's timer splits, which record the first
+ * time each act was reached, so guide undo/jumps and character switches do not
+ * change it. Null when there is nothing fair to compare.
+ */
+export function paceAgainstBest(t: RunTimer | undefined, runs: FinishedRun[], character: string, now: number): Pace | null {
+  if (!t || !t.fullRun || t.finishedAt !== null) return null;
+  const others = runs.filter((r) => r.character !== character);
+  if (!others.length) return null;
+  const best = others.reduce((a, b) => (b.totalMs < a.totalMs ? b : a));
+  const reached = Object.keys(t.actSplits).map(Number).filter((a) => a >= 1 && a <= 10);
+  if (!reached.length) return null;
+  const act = Math.max(...reached);
+  const elapsed = liveElapsed(t, now);
+  const bestEnd = best.actSplits[act + 1];
+  if (typeof bestEnd === "number" && elapsed > bestEnd) return { act, deltaMs: elapsed - bestEnd, kind: "live" };
+  const mine = t.actSplits[act];
+  const theirs = best.actSplits[act];
+  if (act < 2 || typeof theirs !== "number") return null;
+  return { act, deltaMs: mine - theirs, kind: "split" };
+}
+
+/** "1:12 ahead in Act 3" / "0:40 behind in Act 3" / "even in Act 3". */
+export function paceText(p: Pace): string {
+  const s = Math.round(Math.abs(p.deltaMs) / 1000);
+  if (s === 0) return `even with your best in Act ${p.act}`;
+  return `${formatDuration(s * 1000)} ${p.deltaMs < 0 ? "ahead" : "behind"} in Act ${p.act}`;
+}

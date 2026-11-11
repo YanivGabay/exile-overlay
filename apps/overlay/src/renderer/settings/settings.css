@@ -24,7 +24,7 @@ h2 { font-size: 15px; margin: 22px 0 8px; color: var(--text); }
 .table { border-collapse: collapse; width: 100%; margin: 6px 0 12px; }
 .table td { padding: 6px 8px; border-bottom: 1px solid #2a2319; vertical-align: middle; }
 .table.diag td:first-child { width: 190px; color: var(--muted); }
-.table.diag td { word-break: break-all; }
+.table.diag td { overflow-wrap: anywhere; }
 .hotkey { width: 180px; cursor: pointer; text-align: center; }
 .hotkey.recording { border-color: var(--gold); color: var(--gold); }
 .pob { display: flex; flex-direction: column; gap: 6px; max-width: 680px; }
@@ -32,3 +32,15 @@ ul.small li { margin: 4px 0; }
 .presets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 760px; }
 .preset { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px 12px; background: var(--panel-solid); }
 .preset.on { border-color: var(--gold); box-shadow: inset 2px 0 0 var(--gold); }
+kbd { font: inherit; font-size: 0.92em; padding: 1px 6px; border: 1px solid #5b4a33; border-bottom-width: 2px; border-radius: 3px; background: #1e1912; color: #e6dcc8; }
+table.keys { border-collapse: collapse; margin: 4px 0 6px; }
+table.keys td { padding: 3px 14px 3px 0; color: #cfc4ae; }
+
+/* Updates, what's new, page errors */
+.update-box { display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin: 8px 0 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-solid); }
+.update-box .spacer { flex: 1; }
+.changelog-entry h2 { display: flex; align-items: baseline; gap: 10px; }
+.changelog-entry ul { margin-top: 4px; line-height: 1.5; }
+.badge-new { font-size: 12px; font-weight: 600; color: #1a140b; background: var(--gold); border-radius: 3px; padding: 1px 6px; }
+.page-error { max-width: 640px; }
+.page-error .row { margin: 16px 0 8px; }

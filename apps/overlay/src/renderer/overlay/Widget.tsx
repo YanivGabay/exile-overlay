@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { ErrorBoundary } from "../common/ErrorBoundary.js";
 import type { WidgetId, WidgetLayout } from "../../shared/types.js";
 
 const MIN_WIDTH = 0.08;
@@ -18,6 +19,8 @@ export function Widget(props: {
   children: ReactNode;
   /** Opacity override while playing (smart fade); undefined = the layout's own opacity. */
   fade?: number;
+  /** Placement from collision avoidance (px): pushed-down top and a body height cap. */
+  place?: { top?: number; maxBody?: number };
 }) {
   const { layout, editing, onChange } = props;
   // Local copy while dragging, so we don't save on every pointer move.
@@ -58,10 +61,12 @@ export function Widget(props: {
   return (
     <section
       data-widget={props.id}
+      data-x={l.x}
+      data-y={l.y}
       className={`widget widget-${props.id} ${editing ? "editable" : ""} ${l.visible ? "" : "hidden-widget"}`}
       style={{
         left: `${l.x * 100}%`,
-        top: `${l.y * 100}%`,
+        top: !editing && props.place?.top !== undefined ? `${props.place.top}px` : `${l.y * 100}%`,
         width: `${l.width * 100}%`,
         opacity: editing ? Math.max(l.opacity, 0.6) : (props.fade ?? l.opacity),
         fontSize: `${l.scale * 100}%`,
@@ -92,7 +97,14 @@ export function Widget(props: {
           </span>
         </header>
       )}
-      <div className="widget-body">{props.children}</div>
+      <div
+        className={`widget-body ${props.place?.maxBody !== undefined ? "capped" : ""}`}
+        style={props.place?.maxBody !== undefined ? { maxHeight: props.place.maxBody } : undefined}
+      >
+        <ErrorBoundary where={`overlay: ${props.id}`} variant="panel">
+          {props.children}
+        </ErrorBoundary>
+      </div>
       {editing && <div className="resize-handle" onPointerDown={begin("resize")} title="Drag to resize" />}
     </section>
   );

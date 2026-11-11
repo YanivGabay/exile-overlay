@@ -34,7 +34,7 @@ export class OverlayWindow {
     const ev = OverlayController.events;
     ev.on("attach", (e: { hasAccess?: boolean; x: number; y: number; width: number; height: number }) => {
       this.state.patch({
-        overlay: { attached: true, targetFocused: true, bounds: toRect(e) },
+        overlay: { attached: true, targetFocused: true, bounds: toRect(e), attachedAt: Date.now() },
       });
       this.restoreClickThrough();
       if (e.hasAccess === false) {
@@ -45,7 +45,7 @@ export class OverlayWindow {
       }
     });
     ev.on("detach", () => {
-      this.state.patch({ overlay: { attached: false, targetFocused: false, editing: false } });
+      this.state.patch({ overlay: { attached: false, targetFocused: false, editing: false, attachedAt: null } });
     });
     ev.on("focus", () => {
       this.state.patch({ overlay: { targetFocused: true } });

@@ -20,7 +20,7 @@ import type { AppState } from "../../shared/types.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { Interactive, NavBar, RouteMap } from "./Navigation.js";
 import { TrackingBanner, CharacterPicker, ReportBox } from "./Banners.js";
-import { MapsChecklist, Reminders, TimerStrip, TrialsLine } from "./Extras.js";
+import { MapsChecklist, RunSummaryCard, Reminders, TimerStrip, TrialsLine } from "./Extras.js";
 
 const TRAVEL = { waypoint: "Waypoint to", portal: "Portal to", logout: "Log out to", walk: "" } as const;
 
@@ -181,6 +181,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
         <div key={n.id} className="alert loot">
           {n.area === card.areaId ? "Here: " : `In ${guide.areas[n.area!]?.name ?? n.area}: `}
           {n.text}
+          {n.verified === false && <Unconfirmed />}
         </div>
       ))}
       {state.settings.features?.zoneTips !== false && guide.campaign && (
@@ -225,6 +226,9 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           </div>
         </div>
       ) : null}
+      {profile.campaignComplete && state.settings.features?.timer !== false && (
+        <RunSummaryCard profile={profile} runs={state.settings.runs ?? []} gameVersion={state.guide.gameVersion ?? null} />
+      )}
       {(profile.campaignComplete || !card.leave) && guide.campaign?.mapsChecklist && (
         <MapsChecklist items={guide.campaign.mapsChecklist.items} />
       )}
@@ -242,7 +246,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           )}
           {campaign.actRemaining.length > 0 && (
             <span className="quiet" title={campaign.actRemaining.map((q) => q.name).join(", ")}>
-              {campaign.actRemaining.length} more in this act
+              {campaign.actRemaining.reduce((n, q) => n + q.points, 0)} passive point{campaign.actRemaining.reduce((n, q) => n + q.points, 0) === 1 ? "" : "s"} left in Act {act}
             </span>
           )}
           {state.settings.features?.leagueTips !== false && tips.length > 0 && (
@@ -254,11 +258,20 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
           )}
         </footer>
       )}
-      {state.settings.features?.timer !== false && <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} />}
+      {profile.progress.activeEdge < 6 && !editing && (
+        <div className="key-hints">
+          Keys: <kbd>{state.settings.hotkeys.nextStep}</kbd> next zone · <kbd>{state.settings.hotkeys.prevStep}</kbd> back ·{" "}
+          <kbd>{state.settings.hotkeys.toggleEdit}</kbd> move or click the overlay · <kbd>{state.settings.hotkeys.toggleOverlay}</kbd> hide
+        </div>
+      )}
+      {state.settings.features?.timer !== false && <TimerStrip profile={profile} runs={state.settings.runs ?? []} act={act} level={level} showPace={state.settings.features?.pace !== false} />}
       {tipsOpen && (
         <ul className="tips">
           {tips.map((t) => (
-            <li key={t.id}>{t.text}</li>
+            <li key={t.id}>
+              {t.text}
+              {t.verified === false && <Unconfirmed />}
+            </li>
           ))}
         </ul>
       )}
@@ -328,7 +341,16 @@ function MinimalLine({ guide, card }: { guide: GuideRender; card: NonNullable<Re
   );
 }
 
-/** Up to two tips for this zone; sources on hover; unchecked if no guide backs it. */
+/** League facts from previews or past leagues, not yet confirmed for this league's patch. */
+function Unconfirmed() {
+  return (
+    <span className="unchecked" title="Not confirmed for this league yet (from the reveal or an earlier league). Use report if it is wrong.">
+      {" "}unconfirmed
+    </span>
+  );
+}
+
+/** Up to two tips for this zone; sources on hover; marked unverified if no guide backs it. */
 function ZoneTips({ tips, credits }: { tips: ZoneTip[]; credits: { key: string; creator: string; title: string }[] }) {
   if (!tips.length) return null;
   const who = (keys: string[]) =>
@@ -338,7 +360,7 @@ function ZoneTips({ tips, credits }: { tips: ZoneTip[]; credits: { key: string; 
       {tips.slice(0, 2).map((t) => (
         <li key={t.text} className="zone-tip" title={t.sources.length ? `From:\n${who(t.sources)}` : "Written by us, not yet checked in game"}>
           {t.text}
-          {t.confidence === "low" && !t.verified && <span className="unchecked"> unchecked</span>}
+          {t.confidence === "low" && !t.verified && <span className="unchecked" title="Nobody has confirmed this tip in game yet. Use report if it is wrong."> unverified</span>}
         </li>
       ))}
     </ul>
