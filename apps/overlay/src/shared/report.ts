@@ -1,7 +1,7 @@
 import type { AppState } from "./types.js";
 
 /**
- * A support report the player can paste into a bug report or Discord.
+ * A support report the player can paste into a bug report.
  * Personal bits are taken out: the Windows/Linux user name in paths and
  * character names (only class and level stay).
  */

@@ -47,7 +47,9 @@ Updates download in the background and install the next time you quit Exile Over
 
 ## Something went wrong?
 
-Settings → Diagnostics shows what the overlay sees: a red line says what's missing. **Copy report** puts a report on your clipboard: what the overlay sees, plus its recent log, with your Windows user name and character names removed. Paste it into a [GitHub issue](https://github.com/YanivGabay/exile-overlay/issues) or a Discord message. **Open log folder** opens the folder with the full log files.
+Settings → Diagnostics shows what the overlay sees: a red line says what's missing. The [FAQ and known issues](https://github.com/YanivGabay/exile-overlay#faq-and-known-issues) cover the common cases. **Report a problem** puts a report on your clipboard (what the overlay sees, plus its recent log, with your Windows user name and character names removed) and opens the bug form on GitHub: paste it there. **Open log folder** opens the folder with the full log files.
+
+A wrong route step or tip: press F6 in game and click **report** next to the step.
 
 If a panel hits an error it shows one line and retries by itself; your progress and settings are always saved.
 

@@ -64,10 +64,10 @@ export class ErrorBoundary extends Component<Props, State> {
           <button className="primary" onClick={() => location.reload()}>
             Reload this page
           </button>
-          <button onClick={() => void api.send({ type: "copyReport" })}>Copy report</button>
+          <button onClick={() => void api.send({ type: "reportProblem" })}>Report a problem</button>
           <button onClick={() => void api.send({ type: "openLogFolder" })}>Open log folder</button>
         </div>
-        <p className="muted small">Paste the report into a GitHub issue or a Discord message. It contains no account or character names.</p>
+        <p className="muted small">Report a problem copies a report (no account or character names) and opens the bug form on GitHub: paste it there.</p>
       </section>
     );
   }

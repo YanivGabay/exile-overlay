@@ -1,0 +1,23 @@
+name: Feature idea
+description: Something the overlay should do, or do differently.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What should the overlay do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: When would it help?
+      description: The moment in a run where you'd use it (league start, a specific act, maps, SSF, ...).
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: How another tool does it, a sketch, a screenshot.

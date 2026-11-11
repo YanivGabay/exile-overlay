@@ -1,6 +1,6 @@
 import { BrowserWindow, app, clipboard, dialog, shell, type IpcMainInvokeEvent } from "electron";
 import type { Command } from "../shared/types.js";
-import { GUIDES_ISSUE_URL } from "./config.js";
+import { bugReportUrl, guideErrorUrl } from "../shared/support-links.js";
 import type { GuideService } from "./guide/guide-service.js";
 import { importPob } from "./guide/pob.js";
 import type { AppStateStore } from "./state/app-state.js";
@@ -83,17 +83,11 @@ export function createCommandHandler({ state, guide, overlay, updates, appLog, m
       }
       case "reportStep": {
         const s = state.get();
-        const title = `Wrong step: ${cmd.stepId}`;
-        const body = [
-          `Step id: \`${cmd.stepId}\``,
-          `Guide version: ${s.guide.version} (game ${s.guide.gameVersion})`,
-          `Current area: ${s.game.area?.id ?? "unknown"}`,
-          `Route options: ${JSON.stringify(s.settings.guide.options)}`,
-          "",
-          "What went wrong in game:",
-          cmd.note,
-        ].join("\n");
-        void shell.openExternal(`${GUIDES_ISSUE_URL}?${new URLSearchParams({ title, body, labels: "route-fix" })}`);
+        const areaId = s.game.area?.id;
+        const area = areaId ? guide.getRender()?.areas[areaId] : undefined;
+        const zone = areaId ? (area ? `Act ${area.act}, ${area.name}` : s.game.area?.name ?? areaId) : "unknown";
+        const url = guideErrorUrl({ stepId: cmd.stepId, zone, note: cmd.note, guideVersion: s.guide.version, gameVersion: s.guide.gameVersion, options: s.settings.guide.options });
+        void shell.openExternal(url);
         return { ok: true };
       }
       case "openSettings":
@@ -108,6 +102,14 @@ export function createCommandHandler({ state, guide, overlay, updates, appLog, m
       case "copyReport":
         if (clickTest) clickTest.push("report");
         else clipboard.writeText(makeReport());
+        return { ok: true };
+      case "reportProblem":
+        // Copy the report, then open the bug form where the player pastes it.
+        if (clickTest) clickTest.push("report");
+        else {
+          clipboard.writeText(makeReport());
+          void shell.openExternal(bugReportUrl());
+        }
         return { ok: true };
       case "openLogFolder":
         void shell.openPath(appLog.dir);

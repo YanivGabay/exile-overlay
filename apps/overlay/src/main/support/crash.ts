@@ -1,5 +1,6 @@
 import { app, clipboard, dialog, shell, type WebContents } from "electron";
 import { describeError, type AppLog } from "./app-log.js";
+import { bugReportUrl } from "../../shared/support-links.js";
 
 /**
  * Errors never show Electron's raw stack dialog. Main-process errors are
@@ -31,13 +32,16 @@ export function installCrashHandlers(deps: CrashDeps) {
         message: "Exile Overlay hit a problem",
         detail:
           `${message}\n\nYour guide progress and settings are saved. You can keep playing; if the overlay misbehaves, restart it.\n\n` +
-          "To report it, copy the report and paste it into a GitHub issue or Discord message. It contains no account or character names.",
-        buttons: ["Keep running", "Copy report", "Open log folder", "Restart"],
+          "Report a problem copies a report (no account or character names) and opens the bug form on GitHub: paste the report there.",
+        buttons: ["Keep running", "Report a problem", "Open log folder", "Restart"],
         defaultId: 0,
         cancelId: 0,
         noLink: true,
       });
-      if (response === 1) clipboard.writeText(deps.report({ message, stack, where }));
+      if (response === 1) {
+        clipboard.writeText(deps.report({ message, stack, where }));
+        void shell.openExternal(bugReportUrl());
+      }
       if (response === 2) void shell.openPath(deps.log.dir);
       if (response === 3) {
         app.relaunch();
