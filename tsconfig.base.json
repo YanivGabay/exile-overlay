@@ -4,6 +4,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "strict": true,
+    "noUnusedLocals": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "resolveJsonModule": true,

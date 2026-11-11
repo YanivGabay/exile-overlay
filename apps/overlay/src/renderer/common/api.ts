@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Api } from "../../preload/index.js";
-import type { AppState, CharacterProfile } from "../../shared/types.js";
+import type { AppState, CharacterProfile, DeepPartial, Settings } from "../../shared/types.js";
+import { DEFAULT_CHARACTER } from "../../shared/defaults.js";
 import type { GuideRender } from "../../shared/guide-render.js";
 import { INITIAL_PROGRESS } from "@exile-overlay/route-engine";
 
@@ -11,6 +12,11 @@ declare global {
 }
 
 export const api = window.api;
+
+/** Save a partial settings change; main merges it into the stored settings. */
+export function updateSettings(patch: DeepPartial<Settings>) {
+  void api.send({ type: "updateSettings", patch });
+}
 
 export function useAppState(): AppState | null {
   const [state, setState] = useState<AppState | null>(null);
@@ -39,8 +45,6 @@ export function useGuide(): GuideRender | null {
   }, []);
   return guide;
 }
-
-export const DEFAULT_CHARACTER = "_default";
 
 export function activeProfile(state: AppState): CharacterProfile {
   const key = state.settings.activeCharacter ?? DEFAULT_CHARACTER;
