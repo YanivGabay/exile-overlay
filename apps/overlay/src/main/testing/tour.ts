@@ -85,6 +85,29 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
         writeFileSync(join(dir, `${cmd[2]}.png`), (await settings.webContents.capturePage()).toPNG());
         break;
       }
+      case "click": {
+        // Real mouse events on the settings window's button with this text (needs EXILE_OVERLAY_CLICKTEST,
+        // so report buttons log the URL instead of opening a browser or touching the clipboard).
+        const label = cmd.slice(1).join(" ");
+        const at: { x: number; y: number } | null = settings && !settings.isDestroyed()
+          ? await settings.webContents.executeJavaScript(`(() => {
+              const b = [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === ${JSON.stringify(label)} && b.offsetParent);
+              if (!b) return null;
+              b.scrollIntoView({ block: "center" });
+              const r = b.getBoundingClientRect();
+              return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+            })()`)
+          : null;
+        if (!at || !settings) {
+          console.warn(`[tour] click: no button "${label}"`);
+          break;
+        }
+        settings.webContents.sendInputEvent({ type: "mouseDown", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        settings.webContents.sendInputEvent({ type: "mouseUp", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        await wait(800);
+        writeFileSync(join(dir, `click-${label.replace(/\W+/g, "-").toLowerCase()}.png`), (await settings.webContents.capturePage()).toPNG());
+        break;
+      }
       case "attach":
         state.patch({ overlay: cmd[1] === "off" ? { attached: false, attachedAt: null } : { attached: true, attachedAt: Date.now() - Number(cmd[1]) * 1000, bounds: { x: 0, y: 0, width: 1920, height: 1080 } } });
         break;

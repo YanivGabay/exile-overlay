@@ -87,14 +87,19 @@ export function createCommandHandler({ state, guide, overlay, updates, appLog, m
         const area = areaId ? guide.getRender()?.areas[areaId] : undefined;
         const zone = areaId ? (area ? `Act ${area.act}, ${area.name}` : s.game.area?.name ?? areaId) : "unknown";
         const url = guideErrorUrl({ stepId: cmd.stepId, zone, note: cmd.note, guideVersion: s.guide.version, gameVersion: s.guide.gameVersion, options: s.settings.guide.options });
-        void shell.openExternal(url);
+        if (clickTest) {
+          clickTest.push(url);
+          console.log(`[test] would open ${url}`);
+        } else void shell.openExternal(url);
         return { ok: true };
       }
       case "openSettings":
         openSettingsWindow(cmd.tab);
         return { ok: true };
       case "openExternal":
-        if (/^https:\/\//.test(cmd.url)) void shell.openExternal(cmd.url);
+        if (!/^https:\/\//.test(cmd.url)) return { ok: true };
+        if (clickTest) console.log(`[test] would open ${cmd.url}`);
+        else void shell.openExternal(cmd.url);
         return { ok: true };
       case "logError":
         appLog.write("error", `${cmd.where}: ${cmd.stack ?? cmd.message}`);
@@ -105,8 +110,10 @@ export function createCommandHandler({ state, guide, overlay, updates, appLog, m
         return { ok: true };
       case "reportProblem":
         // Copy the report, then open the bug form where the player pastes it.
-        if (clickTest) clickTest.push("report");
-        else {
+        if (clickTest) {
+          clickTest.push("report");
+          console.log(`[test] would copy a ${makeReport().length}-character report and open ${bugReportUrl()}`);
+        } else {
           clipboard.writeText(makeReport());
           void shell.openExternal(bugReportUrl());
         }
