@@ -99,6 +99,9 @@ export class OverlayWindow {
       const overControl = this.controls.some((r) => inside(p, r));
       if (overControl !== this.hovering) {
         this.hovering = overControl;
+        // Other always-on-top overlays (Discord's in-game overlay, for one) can sit above us and take
+        // the click. Coming back to the top as the cursor reaches a control makes the click ours.
+        if (overControl) this.window.moveTop();
         this.window.setIgnoreMouseEvents(!overControl);
         console.log(`[overlay] controls ${overControl ? "clickable" : "click-through"}`);
       }

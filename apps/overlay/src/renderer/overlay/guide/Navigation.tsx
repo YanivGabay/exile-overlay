@@ -3,7 +3,7 @@ import { Interactive } from "../layout/Interactive.js";
 import { api } from "../../common/api.js";
 import { AnyStep } from "./Step.js";
 import type { AppState } from "../../../shared/types.js";
-import { IconBack, IconFwd, IconHere, IconMap, IconUndo } from "./Icons.js";
+import { IconBack, IconFold, IconFwd, IconHere, IconMap, IconUndo } from "./Icons.js";
 import type { GuideRender } from "../../../shared/guide-render.js";
 
 export function NavBar({ state, mapOpen, onToggleMap, onFold }: { state: AppState; mapOpen: boolean; onToggleMap: () => void; onFold?: () => void }) {
@@ -28,8 +28,8 @@ export function NavBar({ state, mapOpen, onToggleMap, onFold }: { state: AppStat
         <IconUndo title="Undo" />
       </button>
       {onFold && (
-        <button title="Fold the guide to a small tab (click the tab to open it again)" onClick={onFold}>
-          –
+        <button title="Fold the guide to a small tab" onClick={onFold}>
+          <IconFold title="Fold" />
         </button>
       )}
       <button

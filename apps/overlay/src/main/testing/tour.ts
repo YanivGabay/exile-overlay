@@ -127,6 +127,17 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
         await wait(800);
         break;
       }
+      case "pointer": {
+        // Simulate the cursor zone main reports (pointer <none|widget|control> [widgetId]) and log how the
+        // clickable regions move: buttons must not shift when the cursor reaches them.
+        const before = JSON.stringify(await windows[0].win.webContents.executeJavaScript("window.__regions && window.__regions()"));
+        state.patch({ overlay: { pointer: cmd[1] as "none" | "widget" | "control", pointerWidget: cmd[2] ?? null } });
+        await wait(700);
+        const after = JSON.stringify(await windows[0].win.webContents.executeJavaScript("window.__regions && window.__regions()"));
+        console.log(`[tour] regions ${before === after ? "unchanged" : "CHANGED"}`);
+        if (before !== after) console.log(`[tour] before ${before}\n[tour] after  ${after}`);
+        break;
+      }
       case "attach":
         state.patch({ overlay: cmd[1] === "off" ? { attached: false, attachedAt: null } : { attached: true, attachedAt: Date.now() - Number(cmd[1]) * 1000, bounds: { x: 0, y: 0, width: 1920, height: 1080 } } });
         break;
