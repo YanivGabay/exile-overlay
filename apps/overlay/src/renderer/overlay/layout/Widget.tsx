@@ -25,6 +25,8 @@ export function Widget(props: {
   place?: { top?: number; maxBody?: number };
   /** Show a fold button while playing; folded, only a tab with the title stays. */
   collapsible?: boolean;
+  /** The widget has its own fold button inside (the guide's icon row): only draw the tab when folded. */
+  foldInside?: boolean;
 }) {
   const { layout, editing, onChange } = props;
   // Local copy while dragging, so we don't save on every pointer move.
@@ -102,7 +104,7 @@ export function Widget(props: {
           </span>
         </header>
       )}
-      {props.collapsible && !editing && (
+      {props.collapsible && !editing && (folded || !props.foldInside) && (
         <Interactive className="widget-fold">
           <button
             title={folded ? `Show ${props.title.toLowerCase()}` : `Fold ${props.title.toLowerCase()} away`}

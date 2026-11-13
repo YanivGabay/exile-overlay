@@ -35,8 +35,8 @@ export function OverlayApp() {
     <div className={`overlay-root ${editing ? "editing" : ""}`}>
       <RegionReporter />
       {editing && <EditBar resolution={res} toggleKey={state.settings.hotkeys.toggleEdit} />}
-      <Widget id="guide" collapsible title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} place={places.guide} onChange={(l) => save("guide", l)}>
-        <GuideCard state={state} guide={guide} />
+      <Widget id="guide" collapsible foldInside title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} place={places.guide} onChange={(l) => save("guide", l)}>
+        <GuideCard state={state} guide={guide} onFold={() => save("guide", { ...layoutOf("guide"), collapsed: true })} />
       </Widget>
       {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} places={places} />}
       {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (

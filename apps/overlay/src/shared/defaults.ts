@@ -31,10 +31,9 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {
-  // Top centre: between the stash/vendor window (left, about 0.61 x screen height wide)
-  // and the inventory (right, the same width), so it covers neither in town. Fits 16:9,
-  // 16:10 and ultrawide; above the character, who stands at the centre of the screen.
-  guide: { x: 0.385, y: 0.01, width: 0.23, visible: true, opacity: 0.92, scale: 1 },
+  // Top right, just under the minimap, kept narrow. It overlaps the inventory when that is open:
+  // fold it with the "–" in its icon row (or Hide/drag it in edit mode).
+  guide: { x: 0.805, y: 0.22, width: 0.19, visible: true, opacity: 0.92, scale: 0.92 },
   // Left side, below the party/buff area. Shown only when a build is imported.
   gems: { x: 0.005, y: 0.22, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   // Bottom left; shown in towns only.
