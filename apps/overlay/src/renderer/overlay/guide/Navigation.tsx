@@ -3,10 +3,10 @@ import { Interactive } from "../layout/Interactive.js";
 import { api } from "../../common/api.js";
 import { AnyStep } from "./Step.js";
 import type { AppState } from "../../../shared/types.js";
-import { IconBack, IconFwd, IconHere, IconMap, IconUndo } from "./Icons.js";
+import { IconBack, IconFold, IconFwd, IconHere, IconMap, IconUndo } from "./Icons.js";
 import type { GuideRender } from "../../../shared/guide-render.js";
 
-export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOpen: boolean; onToggleMap: () => void }) {
+export function NavBar({ state, mapOpen, onToggleMap, onFold }: { state: AppState; mapOpen: boolean; onToggleMap: () => void; onFold?: () => void }) {
   const k = state.settings.hotkeys;
   const canUndo = state.tracking?.undoEdge != null;
   return (
@@ -27,6 +27,11 @@ export function NavBar({ state, mapOpen, onToggleMap }: { state: AppState; mapOp
       <button title="Undo the last move" disabled={!canUndo} onClick={() => void api.send({ type: "guideUndo" })}>
         <IconUndo title="Undo" />
       </button>
+      {onFold && (
+        <button title="Fold the guide to a small tab" onClick={onFold}>
+          <IconFold title="Fold" />
+        </button>
+      )}
       <button
         title={`Hide the overlay (${k.toggleOverlay} or the tray icon brings it back)`}
         onClick={() => void api.send({ type: "setHidden", hidden: true })}

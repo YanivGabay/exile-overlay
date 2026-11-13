@@ -23,3 +23,5 @@ export const IconFwd = ({ title }: P) => svg(<path {...stroke} d="M5.5 3.5 10 8l
 export const IconHere = ({ title }: P) => svg(<path {...stroke} d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3 M8 5.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 1 0 0-5.6Z" />, title);
 export const IconUndo = ({ title }: P) => svg(<path {...stroke} d="M5 4 2.5 6.5 5 9M2.5 6.5H10a3.5 3.5 0 0 1 0 7H7" />, title);
 export const IconMap = ({ title }: P) => svg(<path {...stroke} d="M2 4l4-1.5 4 1.5 4-1.5v10L10 14 6 12.5 2 14Z M6 2.5v10M10 4v10" />, title);
+/** Fold: a panel collapsing up into a bar. */
+export const IconFold = ({ title }: P) => svg(<path {...stroke} d="M3 3.5h10M4.5 12l3.5-3.5 3.5 3.5" />, title);

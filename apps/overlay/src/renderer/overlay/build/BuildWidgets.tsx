@@ -182,7 +182,7 @@ export function BuildWidgets({
   return (
     <>
       {f?.gemLinks !== false && (
-        <Widget id="gems" title="Gem links" layout={layoutOf("gems")} editing={editing} fade={fade("gems")} place={places.gems} onChange={(l) => save("gems", l)}>
+        <Widget id="gems" collapsible title="Gem links" layout={layoutOf("gems")} editing={editing} fade={fade("gems")} place={places.gems} onChange={(l) => save("gems", l)}>
           {f?.shopping !== false && (
             <ShoppingList guide={guide} progress={profile.progress} dismissed={new Set(profile.dismissed ?? [])} inTown={inTown} />
           )}
@@ -190,7 +190,7 @@ export function BuildWidgets({
         </Widget>
       )}
       {f?.tree !== false && (
-        <Widget id="tree" title="Passive tree" layout={layoutOf("tree")} editing={editing} fade={fade("tree")} place={places.tree} onChange={(l) => save("tree", l)}>
+        <Widget id="tree" collapsible title="Passive tree" layout={layoutOf("tree")} editing={editing} fade={fade("tree")} place={places.tree} onChange={(l) => save("tree", l)}>
           <TreeWidget guide={guide} act={act} level={level} questPoints={questPoints} />
         </Widget>
       )}

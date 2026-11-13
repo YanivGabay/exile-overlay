@@ -25,6 +25,8 @@ export interface WidgetLayout {
   opacity: number;
   /** Font scale multiplier, 1 = default. */
   scale: number;
+  /** Folded to a small tab while playing (click the tab to open it again). */
+  collapsed?: boolean;
 }
 
 export type GuideViewMode = "full" | "compact" | "gems" | "minimal";

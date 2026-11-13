@@ -36,8 +36,7 @@ export function OverlayTab({ state }: { state: AppState }) {
           checked={state.settings.fade?.enabled !== false}
           onChange={(e) => void updateSettings({ fade: { enabled: e.target.checked } })}
         />
-        Fade the overlay while I play (fully visible after a zone change and in town; almost invisible when my cursor is
-        over it)
+        Fade the overlay while I play (fully visible after a zone change and in town; faded when my cursor is over it)
       </label>
       <label className="field">
         Faded opacity: {Math.round((state.settings.fade?.idleOpacity ?? 0.35) * 100)}%

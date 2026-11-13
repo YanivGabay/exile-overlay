@@ -58,6 +58,12 @@ The beta isn't code-signed yet, so SmartScreen warns about it. Click **More info
 - Check it isn't hidden: press **F7**, or use the tray icon (it may sit under the ^ arrow near the clock).
 - If the game runs as administrator, run Exile Overlay as administrator too.
 
+**F6 (or another key) opens emojis or does nothing.**
+Many keyboards send special functions from the F-key row unless you hold **Fn** (some have an Fn lock, often Fn+Esc). Hold Fn, or choose other keys under Settings → **Hotkeys**. The tray menu also has **Edit layout** and **Hide / show overlay**, no key needed.
+
+**How do I get a panel out of the way quickly?**
+Click the small **–** tab on the top edge of Gem links, Passive tree or Vendor search to fold it to a tab; click the tab to open it again. To hide a panel completely, use **Hide** in edit mode (F6) or untick it under Settings → Overlay.
+
 **It says it can't find the game log (Client.txt).**
 It's found automatically from the running game, so start the game first. If it still isn't found, Settings → Diagnostics → **Choose Client.txt…** and pick `logs\Client.txt` in the game folder:
 - Steam: `…\steamapps\common\Path of Exile\logs\Client.txt`
