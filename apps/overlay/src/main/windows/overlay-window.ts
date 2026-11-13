@@ -11,6 +11,9 @@ import type { Rect } from "../../shared/types.js";
  * Edit mode makes the overlay take mouse input (to drag widgets or click
  * buttons); leaving edit mode gives focus back to the game.
  */
+/** How close (px) the cursor must come to a control before the overlay takes clicks. */
+const APPROACH = 20;
+
 export class OverlayWindow {
   readonly window: BrowserWindow;
 
@@ -84,7 +87,7 @@ export class OverlayWindow {
   /**
    * Click-through everywhere except over controls, without relying on mouse
    * forwarding (which does not reach a click-through window over some games).
-   * We read the real cursor 25 times a second and toggle click-through.
+   * We read the real cursor 60 times a second and toggle click-through.
    */
   private ensurePolling() {
     if (this.poll) return;
@@ -92,25 +95,29 @@ export class OverlayWindow {
     this.poll = setInterval(() => {
       if (this.window.isDestroyed() || !this.window.isVisible()) return;
       const { overlay } = this.state.get();
-      if (overlay.editing || overlay.hidden) return;
+      if (overlay.editing) return;
+      if (overlay.hidden) {
+        if (this.hovering) this.releaseMouse();
+        return;
+      }
       const c = screen.getCursorScreenPoint();
       const b = this.window.getBounds();
       const p = { x: c.x - b.x, y: c.y - b.y };
-      const overControl = this.controls.some((r) => inside(p, r));
+      // Clickable a little before the cursor reaches a control: players move onto a button and click
+      // in one motion, and a press that arrives before we switch goes to the game instead.
+      const overControl = this.controls.some((r) => inside(p, { x: r.x - APPROACH, y: r.y - APPROACH, width: r.width + 2 * APPROACH, height: r.height + 2 * APPROACH }));
+      const onControl = this.controls.some((r) => inside(p, r));
       if (overControl !== this.hovering) {
         this.hovering = overControl;
-        // Other always-on-top overlays (Discord's in-game overlay, for one) can sit above us and take
-        // the click. Coming back to the top as the cursor reaches a control makes the click ours.
-        if (overControl) this.window.moveTop();
         this.window.setIgnoreMouseEvents(!overControl);
         console.log(`[overlay] controls ${overControl ? "clickable" : "click-through"}`);
       }
       const overWidget = this.widgets.find((w) => inside(p, w.rect))?.id ?? null;
-      const zone = overControl ? "control" : overWidget ? "widget" : "none";
+      const zone = onControl ? "control" : overWidget ? "widget" : "none";
       if (overlay.pointer !== zone || overlay.pointerWidget !== overWidget) {
         this.state.patch({ overlay: { pointer: zone, pointerWidget: overWidget } });
       }
-    }, 40);
+    }, 16);
   }
 
   setEditing(editing: boolean) {
@@ -132,6 +139,14 @@ export class OverlayWindow {
 
   setHidden(hidden: boolean) {
     this.state.patch({ overlay: { hidden } });
+    // Hidden (usually from the ✕ under the cursor): never keep catching clicks on an invisible overlay.
+    if (hidden) this.releaseMouse();
+  }
+
+  /** Back to fully click-through. */
+  private releaseMouse() {
+    this.hovering = false;
+    if (!this.window.isDestroyed() && !this.state.get().overlay.editing) this.window.setIgnoreMouseEvents(true);
   }
 
   /** Scale factor of the display the game is on (for diagnostics). */

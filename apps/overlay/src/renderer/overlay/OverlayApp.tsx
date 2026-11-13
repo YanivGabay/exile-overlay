@@ -16,12 +16,12 @@ export function OverlayApp() {
   const guide = useGuide();
   const fadeOf = useFade(state, guide);
   const places = useStacking(state?.overlay.editing ?? false);
-  if (!state) return null;
+  if (!state) return <RegionReporter />;
   const { overlay } = state;
   const editing = overlay.editing;
-  if (overlay.hidden && !editing) return null;
-  // Login screen and character select: show nothing (unless editing the layout).
-  if (state.game.inGame === false && !editing) return null;
+  // Hidden, or the login screen / character select: draw nothing, but keep reporting regions
+  // (none), so main never keeps old buttons clickable on an empty overlay.
+  if ((overlay.hidden || state.game.inGame === false) && !editing) return <RegionReporter />;
 
   const bounds = overlay.bounds;
   const res = bounds ? resolutionKey(bounds.width, bounds.height) : "unknown";
@@ -35,8 +35,8 @@ export function OverlayApp() {
     <div className={`overlay-root ${editing ? "editing" : ""}`}>
       <RegionReporter />
       {editing && <EditBar resolution={res} toggleKey={state.settings.hotkeys.toggleEdit} />}
-      <Widget id="guide" collapsible foldInside title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} place={places.guide} onChange={(l) => save("guide", l)}>
-        <GuideCard state={state} guide={guide} onFold={() => save("guide", { ...layoutOf("guide"), collapsed: true })} />
+      <Widget id="guide" collapsible title="Leveling guide" layout={layoutOf("guide")} editing={editing} fade={fade("guide")} place={places.guide} onChange={(l) => save("guide", l)}>
+        <GuideCard state={state} guide={guide} />
       </Widget>
       {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} places={places} />}
       {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (

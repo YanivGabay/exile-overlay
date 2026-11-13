@@ -1,6 +1,7 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { ErrorBoundary } from "../../common/ErrorBoundary.js";
 import { Interactive } from "./Interactive.js";
+import { IconFold } from "../guide/Icons.js";
 import type { WidgetId, WidgetLayout } from "../../../shared/types.js";
 
 const MIN_WIDTH = 0.08;
@@ -110,7 +111,7 @@ export function Widget(props: {
             title={folded ? `Show ${props.title.toLowerCase()}` : `Fold ${props.title.toLowerCase()} away`}
             onClick={() => set({ collapsed: !folded })}
           >
-            {folded ? `▸ ${props.title}` : "–"}
+            {folded ? `▸ ${props.title}` : <IconFold title="Fold" />}
           </button>
         </Interactive>
       )}
