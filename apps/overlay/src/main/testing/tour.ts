@@ -108,6 +108,25 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
         writeFileSync(join(dir, `click-${label.replace(/\W+/g, "-").toLowerCase()}.png`), (await settings.webContents.capturePage()).toPNG());
         break;
       }
+      case "oclick": {
+        // Real mouse events on the first overlay window's element with this title attribute.
+        const title = cmd.slice(1).join(" ");
+        const w = windows[0].win;
+        const at: { x: number; y: number } | null = await w.webContents.executeJavaScript(`(() => {
+          const b = [...document.querySelectorAll("[title]")].find((e) => e.title === ${JSON.stringify(title)});
+          if (!b) return null;
+          const r = b.getBoundingClientRect();
+          return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+        })()`);
+        if (!at) {
+          console.warn(`[tour] oclick: nothing titled "${title}"`);
+          break;
+        }
+        w.webContents.sendInputEvent({ type: "mouseDown", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        w.webContents.sendInputEvent({ type: "mouseUp", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        await wait(800);
+        break;
+      }
       case "attach":
         state.patch({ overlay: cmd[1] === "off" ? { attached: false, attachedAt: null } : { attached: true, attachedAt: Date.now() - Number(cmd[1]) * 1000, bounds: { x: 0, y: 0, width: 1920, height: 1080 } } });
         break;

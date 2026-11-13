@@ -40,7 +40,7 @@ export function OverlayApp() {
       </Widget>
       {guide?.build && <BuildWidgets state={state} guide={guide} layoutOf={layoutOf} save={save} editing={editing} fade={fade} places={places} />}
       {guide && state.settings.features?.search !== false && (editing || (guide.areas[state.game.area?.id ?? ""]?.isTown ?? false)) && (
-        <Widget id="search" title="Vendor search" layout={layoutOf("search")} editing={editing} fade={fade("search")} place={places.search} onChange={(l) => save("search", l)}>
+        <Widget id="search" collapsible title="Vendor search" layout={layoutOf("search")} editing={editing} fade={fade("search")} place={places.search} onChange={(l) => save("search", l)}>
           <VendorSearch state={state} guide={guide} level={activeProfile(state).level ?? state.game.character?.level ?? null} />
         </Widget>
       )}

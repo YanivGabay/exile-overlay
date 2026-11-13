@@ -58,6 +58,19 @@ html, body.overlay-body, #root { width: 100%; height: 100%; overflow: hidden; ba
 .widget-tools { display: flex; gap: 3px; }
 .widget-tools button { padding: 0 6px; font-size: 0.8em; }
 .widget-body { padding: 8px 10px 9px; }
+/* Fold tab: hangs off the top-right edge so it never covers the panel's own controls. */
+.widget-fold { position: absolute; top: -17px; right: 6px; }
+.widget-fold button {
+  padding: 0 7px; font-size: 12px; line-height: 16px; height: 17px;
+  background: var(--iron); color: var(--ash); border: 1px solid var(--edge); border-bottom: none; border-radius: 3px 3px 0 0;
+}
+.widget-fold button:hover { color: var(--bone); border-color: var(--edge-lit); }
+.widget.at-top:not(.folded) .widget-fold { top: 2px; }
+.widget.at-top:not(.folded) .widget-fold button { border-bottom: 1px solid var(--edge); border-radius: 3px; }
+.widget.folded { background: transparent; border-color: transparent; box-shadow: none; min-height: 0; }
+.widget.folded::before { display: none; }
+.widget.folded .widget-fold { position: static; }
+.widget.folded .widget-fold button { border-bottom: 1px solid var(--edge); border-radius: 3px; height: auto; padding: 2px 8px; font-family: "Cinzel", serif; color: var(--town); }
 .resize-handle { position: absolute; top: 0; right: -4px; width: 8px; height: 100%; cursor: ew-resize; }
 
 button { font: inherit; color: var(--bone); background: rgba(0, 0, 0, 0.35); border: 1px solid var(--edge); border-radius: 2px; padding: 2px 8px; cursor: pointer; }
