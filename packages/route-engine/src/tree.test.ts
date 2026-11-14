@@ -37,3 +37,19 @@ describe("passive tree", () => {
     expect(pickByTitle(["Act 1-3", "Act 4+"], 4, 40)).toBe(1);
   });
 });
+
+describe("shipped passive tree", () => {
+  const shipped = (JSON.parse(readFileSync(new URL("../../../guides-snapshot/poe1.json", import.meta.url), "utf8")) as { tree: TreeTable }).tree;
+
+  it("is at least as new as the 3.29.1 fixture and keeps every node id, so imported builds still match", () => {
+    expect(shipped.version >= table.version).toBe(true);
+    const missing = Object.keys(table.nodes).filter((id) => !(id in shipped.nodes));
+    expect(missing).toEqual([]);
+  });
+
+  it("keeps keystone and notable names readable (name, kind, stats)", () => {
+    const notables = Object.values(shipped.nodes).filter((n) => n[1] === "n" || n[1] === "k");
+    expect(notables.length).toBeGreaterThan(800);
+    for (const n of notables) expect(typeof n[0] === "string" && n[0].length > 0).toBe(true);
+  });
+});
