@@ -1,7 +1,7 @@
 {
   "name": "@exile-overlay/app",
   "productName": "Exile Overlay",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Path of Exile overlay: leveling tracker with easy setup and a customizable layout",
   "license": "MIT",
   "author": "Yaniv Gabay",

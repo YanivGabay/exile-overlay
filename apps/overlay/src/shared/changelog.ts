@@ -10,8 +10,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.2",
+    date: "2026-11-12",
+    items: [
+      "New Report a problem button in Settings → Diagnostics: it copies a report (no account or character names) and opens the bug form on GitHub, ready to paste.",
+      "Report on a route step (press F6) now opens the guide error form with the zone, step and guide version already filled in.",
+      "Diagnostics links to the FAQ, which covers the SmartScreen warning, finding Client.txt and the overlay not showing in fullscreen.",
+      "If the app hits an error, the error screen and the crash message offer Report a problem too.",
+    ],
+  },
+  {
     version: "0.1.1",
-    date: "2026-11-13",
+    date: "2026-11-11",
     items: [
       "First beta for the 3.30 league: a leveling guide that follows your game log and moves on when you change zones.",
       "Four route presets (league start, speedrun, safe, first time) that set the side stops and how much help you see.",
