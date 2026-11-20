@@ -2,6 +2,7 @@ import type { Bandit } from "@exile-overlay/route-engine";
 import { api, updateSettings } from "../../common/api.js";
 import { DEFAULT_CHARACTER } from "../../../shared/defaults.js";
 import type { AppState } from "../../../shared/types.js";
+import { GemPlanTable } from "../components/GemPlanTable.js";
 import { PobImport } from "../components/PobImport.js";
 import { PresetPicker } from "../components/PresetPicker.js";
 import { RunsTable } from "../components/RunsTable.js";
@@ -68,6 +69,7 @@ export function GuideTab({ state }: { state: AppState }) {
       <RunsTable state={state} />
       <h2>Build (Path of Building)</h2>
       <PobImport state={state} />
+      {state.settings.features.gemPlan !== false && <GemPlanTable />}
       <h2>Characters</h2>
       {characters.length === 0 ? (
         <p className="muted small">Characters appear here after their first level-up. Progress is kept per character.</p>

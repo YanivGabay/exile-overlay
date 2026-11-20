@@ -81,6 +81,8 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
         }
         loadPage(settings, "settings", cmd[1]);
         await wait(1500);
+        // Optional third argument: a CSS selector to scroll into view before the capture.
+        if (cmd[3]) await settings.webContents.executeJavaScript(`document.querySelector(${JSON.stringify(cmd[3])})?.scrollIntoView()`).then(() => wait(700));
         console.log(`[tour] settings url ${await settings.webContents.executeJavaScript("location.href")}`);
         writeFileSync(join(dir, `${cmd[2]}.png`), (await settings.webContents.capturePage()).toPNG());
         break;

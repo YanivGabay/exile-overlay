@@ -219,6 +219,13 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 .shopping { margin-bottom: 6px; padding: 4px 6px; border-left: 2px solid var(--town); background: rgba(232, 198, 106, 0.08); font-size: 0.88em; }
 .shop-head { color: var(--town); font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .shop-npc { margin-top: 2px; }
+.gem-plan { margin-bottom: 6px; padding: 4px 6px; border-left: 2px solid var(--ash); font-size: 0.88em; }
+.plan-head { color: var(--bone); font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.plan-npc { margin-top: 2px; }
+.plan-gem .gem-dot { margin: 0 4px 1px 2px; }
+.plan-act { margin-top: 4px; }
+.plan-act.past { opacity: 0.55; }
+.plan-act-name { font-family: "Cinzel", serif; color: var(--town); font-size: 0.95em; }
 .got { padding: 0 0 0 4px; margin-left: 1px; font-size: 0.75em; color: var(--good); border-color: transparent; background: transparent; }
 .tree-next { margin-top: 4px; display: flex; flex-direction: column; gap: 2px; font-size: 0.9em; }
 .vsearch { display: flex; flex-direction: column; gap: 6px; }

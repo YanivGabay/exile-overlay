@@ -19,3 +19,4 @@ export * from "./campaign.js";
 export * from "./reminders.js";
 export * from "./tree.js";
 export * from "./search.js";
+export * from "./gem-plan.js";
