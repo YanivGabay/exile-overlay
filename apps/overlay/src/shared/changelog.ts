@@ -10,6 +10,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.3",
+    date: "2026-11-20",
+    items: [
+      "Gem plan: with a Path of Building build imported, the gem panel shows which gems to take and buy in this act, and from whom. Settings → Guide & build has the full plan, act by act.",
+      "Fold the guide, gem links, passive tree and vendor search to a small tab while you play; click the tab to open it again. Folded panels are saved with your layout.",
+      "The guide now starts at the top of the screen, clear of your inventory and stash.",
+      "Clicks reach the overlay even with Discord's in-game overlay on, and the overlay never blocks clicks to the game when it's hidden.",
+      "Hovering a panel no longer makes it nearly invisible.",
+      "The built-in guide has the 3.30 passive tree and gems, including Arcane Link.",
+    ],
+  },
+  {
     version: "0.1.2",
     date: "2026-11-12",
     items: [
