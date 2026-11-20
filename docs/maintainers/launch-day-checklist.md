@@ -27,8 +27,7 @@ The [3.30.0 patch notes](https://www.pathofexile.com/forum/view-thread/4013680) 
 
 **Still waiting:**
 - **Notables:** GGG's [skilltree-export](https://github.com/grindinggear/skilltree-export) still ends at 3.29.1 (checked Nov 11). The notes list no player notable changes; diff the export when it lands.
-- **Arcane Link** (new gem: Scion reward for Breaking the Seal, also sold by Petarus and Vanja to Marauder, Duelist and Templar): `gems.json`/`quests.json` need its id and level from the 3.30 game data.
-- `poe1/manifest.json` `gameVersion` stays 3.29 until the tree and gem data are 3.30.
+- **Arcane Link** (new gem: Scion reward for Breaking the Seal, also sold by Petarus and Vanja to Marauder, Duelist and Templar): added from RePoE export 3.30.0.4 and the PoE wiki in exile-overlay-guides PR #4 (`tools/refresh_gems.py`), which also sets `gameVersion` to 3.30. Refresh `guides-snapshot/poe1.json` after it merges.
 
 ## Patch-notes pass (done Nov 11) and what is left
 

@@ -9,6 +9,7 @@ const FEATURE_LABELS: [keyof AppState["settings"]["features"], string][] = [
   ["leagueTips", "League tips link"],
   ["gemLinks", "Gem links widget (needs an imported build)"],
   ["shopping", "Gem shopping list in towns, with vendor search text"],
+  ["gemPlan", "Gem plan: which gems to take and buy in this act, from whom (needs an imported build)"],
   ["tree", "Passive tree widget: which tree fits now, what to take next"],
   ["search", "Vendor search panel in towns (links, movement speed, +1 wands, weapon bases)"],
 ];

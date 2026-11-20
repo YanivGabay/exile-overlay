@@ -6,6 +6,7 @@ import type { AppState, WidgetId, WidgetLayout } from "../../../shared/types.js"
 import type { Place } from "../layout/useStacking.js";
 import { Widget } from "../layout/Widget.js";
 import { GemLinks } from "./GemLinks.js";
+import { UpcomingGems } from "./GemPlan.js";
 import { Interactive } from "../layout/Interactive.js";
 import type { GuideRender } from "../../../shared/guide-render.js";
 
@@ -186,6 +187,7 @@ export function BuildWidgets({
           {f?.shopping !== false && (
             <ShoppingList guide={guide} progress={profile.progress} dismissed={new Set(profile.dismissed ?? [])} inTown={inTown} />
           )}
+          {f?.gemPlan !== false && <UpcomingGems guide={guide} act={act} progress={profile.progress} />}
           <GemLinks guide={guide} act={act} level={level} />
         </Widget>
       )}

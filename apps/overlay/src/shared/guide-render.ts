@@ -1,4 +1,4 @@
-import type { CampaignInfo, GuideStep, RouteData, SearchData, TreeTable } from "@exile-overlay/route-engine";
+import type { CampaignInfo, GemPlan, GuideStep, RouteData, SearchData, TreeTable } from "@exile-overlay/route-engine";
 
 /** What the overlay needs to draw the guide; sent only when the guide is (re)compiled. */
 export interface GuideRender {
@@ -16,6 +16,8 @@ export interface GuideRender {
     trees: RouteData.BuildTree[];
     /** Where each build gem is sold to this class: quest that unlocks it, vendor NPC. */
     vendorGems: { gemId: string; questId: string; npc: string }[];
+    /** Per act: gems you start with, take as quest rewards and buy, in route order. */
+    plan: GemPlan;
   } | null;
   /** Passive tree node names (null if the bundle has none). */
   tree: TreeTable | null;
