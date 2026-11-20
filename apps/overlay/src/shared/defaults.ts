@@ -31,8 +31,9 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {
-  // Right side, below the minimap area, out of the way of the life globe.
-  guide: { x: 0.74, y: 0.3, width: 0.24, visible: true, opacity: 0.92, scale: 1 },
+  // Top right, just under the minimap, kept narrow. It overlaps the inventory when that is open:
+  // fold it with the "–" in its icon row (or Hide/drag it in edit mode).
+  guide: { x: 0.805, y: 0.22, width: 0.19, visible: true, opacity: 0.92, scale: 0.92 },
   // Left side, below the party/buff area. Shown only when a build is imported.
   gems: { x: 0.005, y: 0.22, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   // Bottom left; shown in towns only.

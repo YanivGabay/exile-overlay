@@ -27,7 +27,7 @@ const TRAVEL = { waypoint: "Waypoint to", portal: "Portal to", logout: "Log out 
 
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
 
-export function GuideCard({ state, guide }: { state: AppState; guide: GuideRender | null }) {
+export function GuideCard({ state, guide, onFold }: { state: AppState; guide: GuideRender | null; onFold?: () => void }) {
   const profile = activeProfile(state);
   const { view: mode, showHints, options } = state.settings.guide;
   const [reporting, setReporting] = useState<string | null>(null);
@@ -150,7 +150,7 @@ export function GuideCard({ state, guide }: { state: AppState; guide: GuideRende
       </header>
       <div className="pips-row">
         <ActPips guide={guide} active={profile.progress.activeEdge} visited={visitedSet(profile.progress)} act={act} />
-        <NavBar state={state} mapOpen={mapOpen} onToggleMap={() => setMapOpen(!mapOpen)} />
+        <NavBar state={state} mapOpen={mapOpen} onToggleMap={() => setMapOpen(!mapOpen)} onFold={onFold} />
       </div>
       <div className="zone-meta">
         {area && !area.isTown && <span>Area level {area.level}</span>}

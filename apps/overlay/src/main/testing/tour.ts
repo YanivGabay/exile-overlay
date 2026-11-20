@@ -110,6 +110,36 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
         writeFileSync(join(dir, `click-${label.replace(/\W+/g, "-").toLowerCase()}.png`), (await settings.webContents.capturePage()).toPNG());
         break;
       }
+      case "oclick": {
+        // Real mouse events on the first overlay window's element with this title attribute.
+        const title = cmd.slice(1).join(" ");
+        const w = windows[0].win;
+        const at: { x: number; y: number } | null = await w.webContents.executeJavaScript(`(() => {
+          const b = [...document.querySelectorAll("[title]")].find((e) => e.title === ${JSON.stringify(title)});
+          if (!b) return null;
+          const r = b.getBoundingClientRect();
+          return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+        })()`);
+        if (!at) {
+          console.warn(`[tour] oclick: nothing titled "${title}"`);
+          break;
+        }
+        w.webContents.sendInputEvent({ type: "mouseDown", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        w.webContents.sendInputEvent({ type: "mouseUp", x: at.x, y: at.y, button: "left", clickCount: 1 });
+        await wait(800);
+        break;
+      }
+      case "pointer": {
+        // Simulate the cursor zone main reports (pointer <none|widget|control> [widgetId]) and log how the
+        // clickable regions move: buttons must not shift when the cursor reaches them.
+        const before = JSON.stringify(await windows[0].win.webContents.executeJavaScript("window.__regions && window.__regions()"));
+        state.patch({ overlay: { pointer: cmd[1] as "none" | "widget" | "control", pointerWidget: cmd[2] ?? null } });
+        await wait(700);
+        const after = JSON.stringify(await windows[0].win.webContents.executeJavaScript("window.__regions && window.__regions()"));
+        console.log(`[tour] regions ${before === after ? "unchanged" : "CHANGED"}`);
+        if (before !== after) console.log(`[tour] before ${before}\n[tour] after  ${after}`);
+        break;
+      }
       case "attach":
         state.patch({ overlay: cmd[1] === "off" ? { attached: false, attachedAt: null } : { attached: true, attachedAt: Date.now() - Number(cmd[1]) * 1000, bounds: { x: 0, y: 0, width: 1920, height: 1080 } } });
         break;
