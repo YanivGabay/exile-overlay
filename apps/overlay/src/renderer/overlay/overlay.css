@@ -264,3 +264,9 @@ button:focus-visible { outline: 1px solid var(--town); outline-offset: 1px; }
 /* A panel that crashed shows one quiet line and retries on its own. */
 .panel-error { padding: 0.4em 0.6em; }
 .status .notice { color: var(--gold, #d4a54a); }
+
+/* Next points: the next passive points to take */
+.points-w { display: flex; flex-direction: column; gap: 3px; }
+.points-list { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 2px; }
+.points-list li { line-height: 1.25; }
+.points-missed { line-height: 1.3; }

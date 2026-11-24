@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { availablePoints, parsePobXml, pickByTitle, treeStep, type GameData, type TreeTable } from "./index.js";
+import { availablePoints, parsePobXml, pickByTitle, pointOrder, treeStep, type GameData, type TreeTable } from "./index.js";
 
 const table = JSON.parse(readFileSync(new URL("../test-fixtures/tree-3_29_1.json", import.meta.url), "utf8")) as TreeTable;
 const bundle = JSON.parse(readFileSync(new URL("../../../guides-snapshot/poe1.json", import.meta.url), "utf8")) as { data: GameData.Bundle };
@@ -51,5 +51,21 @@ describe("shipped passive tree", () => {
     const notables = Object.values(shipped.nodes).filter((n) => n[1] === "n" || n[1] === "k");
     expect(notables.length).toBeGreaterThan(800);
     for (const n of notables) expect(typeof n[0] === "string" && n[0].length > 0).toBe(true);
+  });
+
+  it("has every class's start node and the links to order points from it", () => {
+    const classes = ["Scion", "Marauder", "Ranger", "Witch", "Duelist", "Templar", "Shadow"];
+    for (const c of classes) expect(shipped.nodes[shipped.starts![c]]?.[1]).toBe("c");
+    expect(shipped.links!.length).toBeGreaterThan(5000);
+    // A Witch walking to the first notable on her side: every node is taken, in a connected order.
+    const start = shipped.starts!.Witch;
+    const near = new Set<string>([start]);
+    for (let i = 0; i < shipped.links!.length; i += 2) {
+      const [a, b] = [String(shipped.links![i]), String(shipped.links![i + 1])];
+      if (a === start) near.add(b);
+      if (b === start) near.add(a);
+    }
+    const order = pointOrder(shipped, "Witch", [{ name: "t", version: "", url: "", nodes: [...near] }])!;
+    expect(order.map((e) => e.node.id).sort()).toEqual([...near].filter((id) => id !== start).sort());
   });
 });

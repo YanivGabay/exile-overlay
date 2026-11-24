@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   schema: 1,
   firstRunDone: false,
   game: { targetTitle: POE1_WINDOW_TITLE, clientLogPath: null },
-  features: { timer: true, pace: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true, gemPlan: true },
+  features: { timer: true, pace: true, reminders: true, zoneTips: true, leagueTips: true, gemLinks: true, tree: true, shopping: true, search: true, gemPlan: true, points: true },
   search: { presets: ["ms-boots", "recipe-bases"], links: ["4-link"], gems: true },
   fade: { enabled: true, idleOpacity: 0.35, afterSeconds: 8 },
   hotkeys: {
@@ -38,6 +38,8 @@ export const DEFAULT_WIDGET_LAYOUT: Record<WidgetId, WidgetLayout> = {
   gems: { x: 0.005, y: 0.22, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   // Bottom left; shown in towns only.
   search: { x: 0.005, y: 0.78, width: 0.2, visible: true, opacity: 0.92, scale: 0.95 },
+  // Between the gem links and the tree; small. Overlapping widgets stack downwards.
+  points: { x: 0.005, y: 0.47, width: 0.16, visible: true, opacity: 0.9, scale: 0.95 },
   // Below the gem links.
   tree: { x: 0.005, y: 0.52, width: 0.2, visible: true, opacity: 0.9, scale: 0.95 },
   status: { x: 0.005, y: 0.005, width: 0.18, visible: true, opacity: 0.85, scale: 1 },

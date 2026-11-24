@@ -10,7 +10,7 @@ export interface Rect {
   height: number;
 }
 
-export type WidgetId = "guide" | "gems" | "tree" | "search" | "status";
+export type WidgetId = "guide" | "gems" | "tree" | "points" | "search" | "status";
 
 /**
  * Widget placement, relative to the game client area so a layout survives
@@ -71,7 +71,7 @@ export interface Settings {
   /** Fade the guide while playing, and get out of the way when the cursor is over it. */
   fade: { enabled: boolean; idleOpacity: number; afterSeconds: number };
   /** Parts of the overlay the player can switch off. */
-  features: { timer: boolean; pace?: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean; gemPlan?: boolean };
+  features: { timer: boolean; pace?: boolean; reminders: boolean; zoneTips: boolean; leagueTips: boolean; gemLinks: boolean; tree: boolean; shopping: boolean; search: boolean; gemPlan?: boolean; points?: boolean };
   guide: {
     /** Route preset id from the guide bundle (league-start, speedrun, safe, new). */
     preset: string;

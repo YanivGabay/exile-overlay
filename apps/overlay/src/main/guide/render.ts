@@ -1,4 +1,4 @@
-import { gemPlan, type CompiledGuide, type PobBuild } from "@exile-overlay/route-engine";
+import { gemPlan, pointOrder, type CompiledGuide, type PobBuild } from "@exile-overlay/route-engine";
 import type { GuideRender } from "../../shared/guide-render.js";
 import type { GuideBundle } from "./bundle.js";
 
@@ -22,6 +22,7 @@ export function buildRender(bundle: GuideBundle, compiled: CompiledGuide, build:
           trees: build.trees,
           vendorGems: vendorGems(bundle, build),
           plan: gemPlan(compiled, build, data),
+          points: bundle.tree ? pointOrder(bundle.tree, build.className, build.trees) : null,
         }
       : null,
     buildError,
