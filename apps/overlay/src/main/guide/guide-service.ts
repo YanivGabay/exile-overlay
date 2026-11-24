@@ -42,6 +42,12 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   private buildError: string | null = null;
   /** Set after a login: the next zone tells us which character is played. */
   private identifyPending = true;
+  /**
+   * The character this play session belongs to. Party members' level-ups look
+   * exactly like yours in Client.txt; you can only change character through
+   * character select (an outOfGame event), so other names are ignored until then.
+   */
+  private sessionName: string | null = null;
   /** Unknown character: don't touch anyone's progress until we know who it is. */
   private paused = false;
   private lastResync: { areaId: string; order: number[]; index: number; time: number } | null = null;
@@ -205,6 +211,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   selectCharacter(name: string) {
     this.paused = false;
+    this.sessionName = name === DEFAULT_CHARACTER ? null : name;
     this.state.set("tracking", null);
     this.state.replaceSettings({ ...this.state.settings, activeCharacter: name === DEFAULT_CHARACTER ? null : name });
   }
@@ -226,6 +233,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     if (e.type === "outOfGame") {
       if (!replay) {
         this.identifyPending = true;
+        this.sessionName = null;
         if (!this.paused) this.updateTimer((t) => pause(t, logTimeToMs(e.time)));
       }
       return;
@@ -259,6 +267,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         name: c.name,
         progress: c.progress,
         lastSeen: c.lastSeen,
+        level: c.level,
       }));
       const match = candidates.length ? matchCharacter(this.compiled, candidates, e.areaId, this.trackCtx()) : this.activeKey();
       const active = this.activeKey();
@@ -278,19 +287,20 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
           activeCharacter: null,
         });
         this.notice("new", null, e.areaId, e.time);
-        return;
-      }
-      if (match === null) {
+        // Fall through: this zone (usually The Twilight Strand) starts the new
+        // character's progress and run timer, so the run counts as a full run.
+      } else if (match === null) {
         this.paused = true;
         this.notice("paused", null, e.areaId, e.time);
         return;
-      }
-      const wasPaused = this.paused;
-      this.paused = false;
-      if (match !== active || wasPaused) {
-        if (match !== active)
-          this.state.replaceSettings({ ...this.state.settings, activeCharacter: match === DEFAULT_CHARACTER ? null : match });
-        this.notice("switched", match, e.areaId, e.time);
+      } else {
+        const wasPaused = this.paused;
+        this.paused = false;
+        if (match !== active || wasPaused) {
+          if (match !== active)
+            this.state.replaceSettings({ ...this.state.settings, activeCharacter: match === DEFAULT_CHARACTER ? null : match });
+          this.notice("switched", match, e.areaId, e.time);
+        }
       }
     }
 
@@ -308,7 +318,11 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     // Timer: start on the first zone (full run if it is The Twilight Strand), then tick and split by act.
     const at = logTimeToMs(e.time);
     const profile = this.profile();
-    let timer = profile.timer ?? newTimer(at, e.areaId === this.compiled.edges[0], profile.level ?? 1);
+    const atStrand = e.areaId === this.compiled.edges[0];
+    // A profile that never left the first step but got a partial timer (it saw a
+    // hideout or town first) starts over when the campaign really starts.
+    const stale = profile.timer && !profile.timer.fullRun && atStrand && before === 0 && progress.activeEdge === 0;
+    let timer = profile.timer && !stale ? profile.timer : newTimer(at, atStrand, profile.level ?? 1);
     timer = markAct(tick(timer, at), this.currentAct());
     this.saveProfile({ ...this.profile(), timer });
   }
@@ -345,6 +359,8 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   /** A level-up names the character for sure. */
   private onLevelUp(name: string, className: string, level: number) {
+    if (this.sessionName !== null && name !== this.sessionName) return; // a party member
+    this.sessionName = name;
     const settings = this.state.settings;
     const existing = settings.characters[name];
     const activeIsDefault = settings.activeCharacter === null;

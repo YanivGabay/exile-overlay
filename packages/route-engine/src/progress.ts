@@ -376,7 +376,12 @@ export interface CharacterCandidate {
   progress: GuideProgress;
   /** ISO time, used to break ties (most recently played wins). */
   lastSeen: string;
+  /** Last known level; a high-level character is not the one starting the campaign. */
+  level?: number | null;
 }
+
+/** Nobody leaves The Twilight Strand above this level, so such a character entering it is a new one. */
+const STRAND_MAX_LEVEL = 12;
 
 /**
  * After a login, the log doesn't say which character was picked. Guess it
@@ -393,6 +398,9 @@ export function matchCharacter(
   const act = ctx.actOf?.(areaId);
   let best: { name: string; score: number; lastSeen: string } | null = null;
   for (const c of candidates) {
+    // An endgame character the overlay never tracked through the campaign sits at
+    // step 0; it must not claim a fresh character's Twilight Strand.
+    if (areaId === guide.edges[0] && (c.level ?? 0) > STRAND_MAX_LEVEL) continue;
     const p = Math.min(c.progress.activeEdge, guide.edges.length - 1);
     let score = 0;
     if (guide.edges[p] === areaId) score = 4;

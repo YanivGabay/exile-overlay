@@ -12,7 +12,7 @@
 
 export type LogEvent =
   /** Login screen or character select: the player is not in a zone. */
-  | { type: "outOfGame"; time: string; reason: "clientStart" | "loginServer" }
+  | { type: "outOfGame"; time: string; reason: "clientStart" | "loginServer" | "disconnect" }
   | { type: "areaGenerated"; time: string; areaId: string; areaLevel: number; seed: number }
   | { type: "levelUp"; time: string; character: string; className: string; level: number }
   | { type: "areaEntered"; time: string; areaName: string }
@@ -36,6 +36,9 @@ const DEATH = /^: (\S+) has (?:been slain|committed suicide)\.\s*$/;
 // Written when the client starts, and when the player logs out to character select.
 const LOG_OPENING = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \*\*\*\*\* LOG FILE OPENING/;
 const LOGIN_SERVER = /^Async connecting to \S*login\.pathofexile\.com/;
+// Dropped from the server (connection lost, realm down, league ended). The client
+// goes back to the login screen; its reconnect line can come a minute later.
+const DISCONNECT = /^Abnormal disconnect: /;
 
 export function parseLine(line: string): LogEvent | null {
   const opening = LOG_OPENING.exec(line);
@@ -46,6 +49,7 @@ export function parseLine(line: string): LogEvent | null {
   const rest = line.slice(prefix[0].length);
 
   if (LOGIN_SERVER.test(rest)) return { type: "outOfGame", time, reason: "loginServer" };
+  if (DISCONNECT.test(rest)) return { type: "outOfGame", time, reason: "disconnect" };
   let m = GENERATING.exec(rest);
   if (m) {
     return {

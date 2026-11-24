@@ -1,4 +1,4 @@
-import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -104,5 +104,83 @@ describe("LogTailer", () => {
     await tailer.start();
     tailer.stop();
     expect(got).toEqual(["bbb", "ccc"]);
+  });
+});
+
+describe("log formats of the last five patches (3.26 to 3.30)", () => {
+  // One real line per event type from each patch, names and dates anonymized.
+  const fixtures = JSON.parse(readFileSync(new URL("../test-fixtures/patch-lines.json", import.meta.url), "utf8")) as Record<
+    string,
+    { expect: string | null; line: string }[]
+  >;
+
+  it("covers 3.26, 3.27, 3.28, 3.29 and 3.30", () => {
+    expect(Object.keys(fixtures).map((v) => v.split(".").slice(0, 2).join("."))).toEqual(
+      expect.arrayContaining(["3.26", "3.27", "3.28", "3.29", "3.30"]),
+    );
+  });
+
+  for (const [version, lines] of Object.entries(fixtures)) {
+    it(`parses every event line from ${version}`, () => {
+      for (const { expect: type, line } of lines) expect(parseLine(line)?.type ?? null, line).toBe(type);
+    });
+  }
+
+  it("treats a disconnect as leaving the game", () => {
+    for (const why of ["An unexpected disconnection occurred.", "The realm is currently down for maintenance. Try again later.", "Game server lost contact with the realm."])
+      expect(parseLine(`${P} [INFO Client 1] Abnormal disconnect: ${why}`)).toMatchObject({ type: "outOfGame", reason: "disconnect" });
+    expect(parseLine(`${P} [INFO Client 1] #Bob: Abnormal disconnect: lol`)).toBeNull();
+  });
+});
+
+describe("LogTailer under load", () => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it("reads a big burst over several polls, in order, without one huge buffer", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eo-log-"));
+    const file = join(dir, "Client.txt");
+    writeFileSync(file, "");
+    const tailer = new LogTailer(file, { pollMs: 5, maxReadBytes: 1000 });
+    const batches: string[][] = [];
+    tailer.on("lines", (l) => batches.push(l));
+    await tailer.start();
+    const lines = Array.from({ length: 2000 }, (_, i) => `line ${i}`);
+    appendFileSync(file, lines.join("\r\n") + "\r\n");
+    for (let i = 0; i < 200 && batches.flat().length < lines.length; i++) await wait(5);
+    tailer.stop();
+    expect(batches.flat()).toEqual(lines);
+    expect(batches.length).toBeGreaterThan(10);
+    expect(Math.max(...batches.map((b) => b.join("\n").length))).toBeLessThanOrEqual(1000);
+  });
+
+  it("drops a runaway line with no newline and keeps going", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eo-log-"));
+    const file = join(dir, "Client.txt");
+    writeFileSync(file, "");
+    const tailer = new LogTailer(file, { pollMs: 5 });
+    const got: string[] = [];
+    tailer.on("lines", (l) => got.push(...l));
+    await tailer.start();
+    appendFileSync(file, "\0".repeat(100 * 1024));
+    await wait(30);
+    appendFileSync(file, "\nreal line\n");
+    await wait(30);
+    tailer.stop();
+    expect(got.at(-1)).toBe("real line");
+    expect(got.every((l) => l.length < 64 * 1024)).toBe(true);
+  });
+
+  it("emits nothing after stop()", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eo-log-"));
+    const file = join(dir, "Client.txt");
+    writeFileSync(file, "");
+    const tailer = new LogTailer(file, { pollMs: 5 });
+    const got: string[] = [];
+    tailer.on("lines", (l) => got.push(...l));
+    await tailer.start();
+    tailer.stop();
+    appendFileSync(file, "late\n");
+    await wait(30);
+    expect(got).toEqual([]);
   });
 });

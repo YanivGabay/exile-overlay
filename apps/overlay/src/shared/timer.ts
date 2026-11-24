@@ -60,6 +60,8 @@ export function markAct(t: RunTimer, act: number): RunTimer {
 }
 
 export function addDeath(t: RunTimer, act: number): RunTimer {
+  // Deaths in maps after Kitava don't belong to the finished campaign run.
+  if (t.finishedAt !== null) return t;
   return { ...t, deaths: t.deaths + 1, deathsByAct: { ...t.deathsByAct, [act]: (t.deathsByAct[act] ?? 0) + 1 } };
 }
 

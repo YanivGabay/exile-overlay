@@ -28,8 +28,15 @@ function setup() {
   const guide = new GuideService(state, SNAPSHOT, join(dir, "guides"), null);
   guide.start();
   guide.stop();
-  let n = 0;
-  const line = (rest: string) => `2026/11/02 20:${String(10 + Math.floor(n / 60)).padStart(2, "0")}:${String(n++ % 60).padStart(2, "0")} 1 a [DEBUG Client 1] ${rest}`;
+  // Log clock: one second per line; advance() skips ahead (time spent in a zone).
+  let clock = new Date(2026, 10, 2, 20, 10, 0).getTime();
+  const advance = (seconds: number) => (clock += seconds * 1000);
+  const stamp = () => {
+    const d = new Date((clock += 1000));
+    const p2 = (v: number) => String(v).padStart(2, "0");
+    return `${d.getFullYear()}/${p2(d.getMonth() + 1)}/${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`;
+  };
+  const line = (rest: string) => `${stamp()} 1 a [DEBUG Client 1] ${rest}`;
   const feed = (...raw: string[]) => {
     for (const r of raw) {
       const e = parseLine(r) as LogEvent;
@@ -45,7 +52,8 @@ function setup() {
     const s = state.get().settings;
     return s.characters[s.activeCharacter ?? DEFAULT_CHARACTER];
   };
-  return { state, guide, feed, enter, levelUp, logout, active, raw };
+  const disconnect = () => raw("Abnormal disconnect: An unexpected disconnection occurred.");
+  return { state, guide, feed, enter, levelUp, logout, disconnect, active, raw, advance };
 }
 
 describe("GuideService with log events", () => {
@@ -162,5 +170,107 @@ describe("GuideService with log events", () => {
     expect(render!.buildError).toBeNull();
     expect(render!.steps.length).toBeGreaterThan(before);
     expect(Object.values(render!.gems).map((g) => g.name)).toContain("Sunder");
+  });
+
+  it("gives a new character's Twilight Strand to the new character, not an untracked endgame one", () => {
+    const t = setup();
+    // An endgame character the overlay met in maps: still at the first step.
+    t.feed(t.enter("HideoutMountain"), t.levelUp("Mapper", "Necromancer", 94), t.enter("MapWorldsLookout"), t.enter("HideoutMountain"));
+    expect(t.active().name).toBe("Mapper");
+    expect(t.active().progress.activeEdge).toBe(0);
+    t.feed(t.logout(), t.enter("1_1_1"));
+    expect(t.state.get().tracking).toMatchObject({ kind: "character", event: "new" });
+    t.feed(t.levelUp("Leaguestart", "Witch", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    expect(t.active().name).toBe("Leaguestart");
+    expect(t.active().timer?.fullRun).toBe(true);
+    expect(t.state.get().settings.characters.Mapper.level).toBe(94);
+  });
+
+  it("starts the run timer on a new character's first zone, so the run counts as full", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("First", "Witch", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    t.feed(t.logout(), t.enter("1_1_1"));
+    expect(t.active().timer?.fullRun).toBe(true);
+    t.feed(t.levelUp("Second", "Duelist", 2), t.enter("1_1_town"));
+    expect(t.active().name).toBe("Second");
+    expect(t.active().timer?.fullRun).toBe(true);
+    expect(t.active().timer?.actSplits[1]).toBe(0);
+  });
+
+  it("restarts a partial timer from a hideout visit when the campaign really starts", () => {
+    const t = setup();
+    // Overlay installed while in the hideout: the fresh profile gets a partial timer.
+    t.feed(t.enter("HideoutMountain"));
+    expect(t.active().timer?.fullRun).toBe(false);
+    t.advance(3600);
+    t.feed(t.enter("1_1_1"), t.levelUp("Fresh", "Templar", 2), t.enter("1_1_town"));
+    expect(t.active().timer?.fullRun).toBe(true);
+    expect(t.active().timer!.elapsedMs).toBeLessThan(60_000);
+  });
+
+  it("ignores a party member's level-up until the next character select", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Me", "Ranger", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    t.feed(t.levelUp("PartyFriend", "Witch", 3), t.enter("1_1_3"));
+    expect(t.state.get().settings.activeCharacter).toBe("Me");
+    expect(t.state.get().settings.characters.PartyFriend).toBeUndefined();
+    t.feed(t.levelUp("Me", "Ranger", 3));
+    expect(t.active().level).toBe(3);
+    // After character select, another name is a real switch.
+    t.feed(t.logout(), t.enter("2_6_town"), t.levelUp("Other", "Duelist", 50));
+    expect(t.state.get().settings.activeCharacter).toBe("Other");
+  });
+
+  it("pauses the clock on a disconnect and picks the same character back up", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Me", "Ranger", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    const before = t.active().timer!.elapsedMs;
+    t.feed(t.disconnect());
+    expect(t.active().timer!.lastAt).toBeNull();
+    t.advance(5 * 60); // realm down for five minutes
+    t.feed(t.logout(), t.enter("1_1_2"));
+    expect(t.active().name).toBe("Me");
+    expect(t.active().timer!.elapsedMs).toBeLessThan(before + 10_000);
+  });
+
+  it("stays bounded over an eight-hour session: campaign, then mapping, with deaths and disconnects", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Marathon", "Marauder", 2));
+    const route = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
+    expect(route.length).toBeGreaterThan(100);
+    let deaths = 0;
+    const die = () => {
+      t.feed(t.raw(": Marathon has been slain."));
+      deaths++;
+    };
+    // About four hours of campaign.
+    for (let i = 1; i < route.length; i++) {
+      t.advance(55);
+      t.feed(t.enter(route[i]));
+      if (i % 7 === 0) die();
+      if (i % 13 === 0) t.feed(t.enter("HideoutMountain"), t.enter(route[i]));
+      if (i % 31 === 0) t.feed(t.disconnect(), t.logout(), t.enter(route[i]));
+    }
+    t.feed(t.raw("Sin: May a new dawn arise!"));
+    expect(t.state.get().settings.runs).toHaveLength(1);
+    expect(t.state.get().settings.runs[0].totalMs).toBeGreaterThan(3 * 3600_000);
+    const afterCampaign = JSON.stringify(t.state.get().settings).length;
+    // About four hours of maps.
+    for (let i = 0; i < 300; i++) {
+      t.advance(45);
+      t.feed(t.enter("HideoutMountain"), t.enter(i % 2 ? "MapWorldsLookout" : "MapWorldsCrimsonTemple"));
+      if (i % 9 === 0) die();
+      if (i % 50 === 0) t.feed(t.disconnect(), t.logout(), t.enter("HideoutMountain"));
+      if (i % 25 === 0) t.feed(t.levelUp("Marathon", "Juggernaut", 70 + i / 25));
+    }
+    const s = t.state.get().settings;
+    expect(Object.keys(s.characters)).toEqual(["Marathon"]);
+    expect(s.runs).toHaveLength(1);
+    expect(t.active().level).toBe(81);
+    // Deaths count until the campaign ends; the finished run keeps its total.
+    expect(t.active().timer!.deaths).toBe(Math.floor((route.length - 1) / 7));
+    expect(deaths).toBeGreaterThan(60);
+    // Saved settings don't grow with play time.
+    expect(JSON.stringify(s).length).toBeLessThan(afterCampaign * 1.05);
   });
 });
