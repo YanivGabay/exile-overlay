@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exile Overlay: a leveling overlay for Path of Exile</title>
+<meta name="description" content="A free, open-source leveling overlay for Path of Exile 1. It follows your zone from the game log, shows your build's gems and passive tree, and stays out of your way.">
+<link rel="icon" href="img/icon.png">
+<style>
+  @font-face { font-family: "Cinzel"; src: url("fonts/Cinzel.ttf") format("truetype"); font-weight: 400 900; font-display: swap; }
+  @font-face { font-family: "Alegreya Sans"; src: url("fonts/AlegreyaSans-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Alegreya Sans"; src: url("fonts/AlegreyaSans-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+  @font-face { font-family: "Alegreya Sans"; src: url("fonts/AlegreyaSans-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+  /* The overlay's own palette: iron panels, bone text, gold for towns, ember for "next". */
+  :root {
+    --iron: #1a1610;
+    --iron-2: #241e15;
+    --edge: #5b4a33;
+    --edge-lit: #8a6f45;
+    --bone: #e6dcc8;
+    --ash: #b5aa94;
+    --gold: #e8c66a;
+    --ember: #d07a2e;
+    --area: #9db4ff;
+    --quest: #c9a0f0;
+    --measure: 64ch;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--iron);
+    color: var(--bone);
+    font: 400 1.125rem/1.6 "Alegreya Sans", system-ui, sans-serif;
+  }
+  img { max-width: 100%; height: auto; display: block; }
+  a { color: var(--gold); text-underline-offset: 3px; }
+  a:hover { color: #f4dc95; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 600px) { .wrap { padding: 0 16px; } }
+
+  h1, h2, h3 { font-family: "Cinzel", serif; font-weight: 700; color: var(--gold); line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.4rem); letter-spacing: 0.01em; }
+  h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin-bottom: 0.6em; }
+  h3 { font-size: 1.15rem; margin-bottom: 0.35em; }
+  p { margin: 0 0 1em; max-width: var(--measure); }
+
+  /* Header */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: "Cinzel", serif; font-weight: 700; color: var(--gold); text-decoration: none; font-size: 1.15rem; }
+  .brand img { width: 28px; height: 28px; }
+  .top nav { display: flex; gap: 20px; font-size: 1rem; }
+  .top nav a { color: var(--ash); text-decoration: none; }
+  .top nav a:hover { color: var(--bone); }
+  @media (max-width: 600px) { .top nav { display: none; } }
+
+  /* Hero: the claim, then the real overlay over the (stand-in) game screen */
+  .hero { padding: 40px 0 0; }
+  .hero h1 { max-width: 16ch; }
+  .lede { font-size: 1.3rem; color: var(--ash); margin-top: 18px; max-width: 52ch; }
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin: 28px 0 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--ember); color: #1a1208; text-decoration: none;
+    font-weight: 700; font-size: 1.15rem; padding: 12px 22px; border-radius: 4px;
+    border: 1px solid #e89a55;
+  }
+  .btn:hover { background: #e08a3c; color: #1a1208; }
+  .btn svg { width: 20px; height: 20px; }
+  .cta .meta { color: var(--ash); font-size: 1rem; }
+  .screen {
+    margin: 40px 0 0;
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+  }
+  .screen figcaption { padding: 10px 14px; font-size: 0.95rem; color: var(--ash); background: var(--iron-2); border-top: 1px solid var(--edge); }
+
+  section { padding: 72px 0 0; }
+
+  /* What you see: panels laid out like the screen, left column and right column */
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 40px 48px; align-items: start; }
+  @media (max-width: 820px) { .panels { grid-template-columns: 1fr; } }
+  .panel figure { margin: 0 0 14px; border: 1px solid var(--edge); border-radius: 4px; overflow: hidden; background: #000; }
+  .panel p { font-size: 1.05rem; color: var(--ash); }
+  .panel h3 .where { font-family: "Alegreya Sans", sans-serif; font-weight: 500; font-size: 0.9rem; color: var(--ash); margin-left: 8px; letter-spacing: 0; }
+
+  /* Install: an actual sequence, so numbered */
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; counter-reset: step; }
+  @media (max-width: 820px) { .steps { grid-template-columns: 1fr; } }
+  .steps li { counter-increment: step; border-top: 1px solid var(--edge-lit); padding-top: 14px; }
+  .steps li::before { content: counter(step); font-family: "Cinzel", serif; font-weight: 700; color: var(--ember); font-size: 1.6rem; display: block; line-height: 1; margin-bottom: 8px; }
+  .steps p { font-size: 1.05rem; color: var(--ash); }
+  .keys { border-collapse: collapse; margin-top: 8px; font-size: 1rem; }
+  .keys td { padding: 4px 16px 4px 0; vertical-align: top; color: var(--ash); }
+  kbd { font: 500 0.9rem "Alegreya Sans", sans-serif; color: var(--bone); border: 1px solid var(--edge-lit); border-bottom-width: 2px; border-radius: 3px; padding: 0 6px; background: var(--iron-2); white-space: nowrap; }
+  code { font: inherit; color: var(--bone); background: var(--iron-2); border: 1px solid var(--edge); border-radius: 3px; padding: 0 5px; }
+  .setup-shot { margin: 40px 0 0; max-width: 670px; border: 1px solid var(--edge); border-radius: 4px; overflow: hidden; }
+
+  /* Trust */
+  .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  @media (max-width: 820px) { .trust { grid-template-columns: 1fr; } }
+  .trust p { font-size: 1.05rem; color: var(--ash); }
+  .trust strong { color: var(--bone); font-weight: 500; }
+
+  /* FAQ */
+  .faq { max-width: 760px; }
+  details { border-top: 1px solid var(--edge); padding: 14px 0; }
+  details:last-of-type { border-bottom: 1px solid var(--edge); }
+  summary { cursor: pointer; font-weight: 700; font-size: 1.1rem; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--gold); font-family: "Cinzel", serif; font-size: 1.3rem; line-height: 1; }
+  details[open] summary::after { content: "−"; }
+  details p, details ul { color: var(--ash); font-size: 1.05rem; margin: 10px 0 0; }
+  details ul { padding-left: 1.2em; max-width: var(--measure); }
+
+  footer { margin-top: 88px; padding: 28px 0 40px; border-top: 1px solid var(--edge); color: var(--ash); font-size: 0.95rem; }
+  footer p { max-width: none; margin-bottom: 0.5em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#"><img src="img/icon.png" alt="" width="28" height="28">Exile Overlay</a>
+    <nav aria-label="Sections">
+      <a href="#features">What you get</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/YanivGabay/exile-overlay">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>The guide moves on when you change zones.</h1>
+      <p class="lede">A leveling overlay for Path of Exile 1. It reads the game's log to know where you are, shows what to do in each zone and your build's gems and passive tree, and stays out of your way.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/YanivGabay/exile-overlay/releases/latest" id="download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+          Download for Windows
+        </a>
+        <span class="meta" id="release-meta">Free and open source (MIT). Beta for the 3.30 league.</span>
+      </div>
+      <figure class="screen">
+        <img src="img/hero-zone.webp" width="1600" height="438" alt="The overlay at 1440p: the leveling guide on the right with the current zone, what to do and where to go next; on the left, the gems to take and buy in this act, the build's gem links and the passive tree for this level.">
+        <figcaption>The real overlay at 1440p, over a stand-in for the game screen. Guide on the right, your build on the left.</figcaption>
+      </figure>
+    </div>
+
+    <section id="features" aria-labelledby="features-h">
+      <h2 id="features-h">What you get</h2>
+      <div class="panels">
+        <div class="panel">
+          <figure><img src="img/guide-card.webp" width="500" height="455" loading="lazy" alt="Guide card for The Climb: area level, a tip, a movement speed boots reminder with a copy-search button, the next zones and the quests to hand in, and the quest passives counter."></figure>
+          <h3>The guide <span class="where">top right</span></h3>
+          <p>Each zone says what to do and where to go next, and the guide follows you as you change zones. Reminders for boots, weapon upgrades and level checks before big bosses; a counter for quest passive points and labyrinth trials.</p>
+        </div>
+        <div class="panel">
+          <figure><img src="img/gem-links.webp" width="525" height="440" loading="lazy" alt="Gem panel: the gems to take as quest rewards and to buy in this act, from which NPC, then the build's gem links for Act 1."></figure>
+          <h3>Your build's gems <span class="where">left</span></h3>
+          <p>Paste a Path of Building code and the overlay knows which gem to take from each quest, which to buy and from whom, and how to link them at your level.</p>
+        </div>
+        <div class="panel">
+          <figure><img src="img/passive-tree.webp" width="525" height="184" loading="lazy" alt="Passive tree panel: the tree that fits your level, points you have, and the notables the next tree adds."></figure>
+          <h3>Passive tree for your level</h3>
+          <p>Picks the PoB tree that fits your level and names the notables the next one adds, so you never alt-tab to count points.</p>
+        </div>
+        <div class="panel">
+          <figure><img src="img/vendor-search.webp" width="525" height="255" loading="lazy" alt="Vendor search panel in town: buttons for 3-link, 4-link, movement speed boots, +1 wands and weapon bases, and copy-search buttons."></figure>
+          <h3>Vendor search in town</h3>
+          <p>One click copies search text for links, movement speed boots, +1 wands and weapon recipe bases, with only the tiers that can roll at your level.</p>
+        </div>
+      </div>
+      <p style="margin-top: 32px; color: var(--ash);">Also: a campaign timer with act splits and live pace against your best run, a run summary to share, and every panel can be moved, resized, faded or folded away (layouts are saved per resolution).</p>
+    </section>
+
+    <section id="install" aria-labelledby="install-h">
+      <h2 id="install-h">Install in a minute</h2>
+      <ol class="steps">
+        <li>
+          <h3>Download and run</h3>
+          <p>Get <a href="https://github.com/YanivGabay/exile-overlay/releases/latest">the latest installer</a>. The beta isn't code-signed yet: if Windows says "Windows protected your PC", click More info, then Run anyway.</p>
+        </li>
+        <li>
+          <h3>Pick how you play</h3>
+          <p>Setup opens by itself: league start, speedrun, SSF/hardcore-safe or first time. Paste your Path of Building code if you have one.</p>
+        </li>
+        <li>
+          <h3>Play</h3>
+          <p>Start Path of Exile in Windowed or Windowed Fullscreen and enter a zone. The game log is found for you.</p>
+          <table class="keys">
+            <tr><td><kbd>F4</kbd> <kbd>F3</kbd></td><td>next / previous zone</td></tr>
+            <tr><td><kbd>Shift+F4</kbd></td><td>jump to the zone you're in</td></tr>
+            <tr><td><kbd>F6</kbd></td><td>move and resize panels</td></tr>
+            <tr><td><kbd>F7</kbd></td><td>hide or show</td></tr>
+          </table>
+        </li>
+      </ol>
+      <figure class="setup-shot"><img src="img/setup.webp" width="670" height="265" loading="lazy" alt="The Setup window: choose how you play this league: league start, speedrun, SSF/hardcore-safe or first time."></figure>
+    </section>
+
+    <section aria-labelledby="trust-h">
+      <h2 id="trust-h">What it reads, and what it doesn't</h2>
+      <div class="trust">
+        <p><strong>Reads one file:</strong> the game's log (<code>Client.txt</code>) for your zone, character, class and level. Nothing else on your PC.</p>
+        <p><strong>Never touches the game:</strong> no memory reading, no changes to game files, no keys or clicks sent. It draws in its own transparent window.</p>
+        <p><strong>Downloads only updates:</strong> guide fixes (within 30 minutes, no reinstall), app updates from GitHub releases, and the build links you paste. Nothing about you is uploaded.</p>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="faq-h">
+      <h2 id="faq-h">FAQ</h2>
+      <div class="faq">
+        <details>
+          <summary>The overlay doesn't show up over the game.</summary>
+          <ul>
+            <li>Set the game to Windowed Fullscreen (or Windowed) under Options → Graphics. In exclusive Fullscreen, Windows hides every overlay.</li>
+            <li>Log in and enter a zone: the overlay hides on the login and character screens.</li>
+            <li>Press <kbd>F7</kbd> or use the tray icon in case it's hidden. If the game runs as administrator, run Exile Overlay as administrator too.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Windows says "Windows protected your PC".</summary>
+          <p>The beta isn't code-signed yet, so SmartScreen warns about it. Click More info, then Run anyway. The source is public and every release is built by CI from a tagged commit.</p>
+        </details>
+        <details>
+          <summary>Is it allowed?</summary>
+          <p>It only reads the game's log file, the same file other leveling tools read. It never reads game memory, never changes game files and never sends keys or clicks to the game.</p>
+        </details>
+        <details>
+          <summary>F6 opens emojis or does nothing.</summary>
+          <p>Many keyboards send special functions from the F-key row unless you hold Fn. Hold Fn, or choose other keys under Settings → Hotkeys. The tray menu also has Edit layout and Hide / show overlay.</p>
+        </details>
+        <details>
+          <summary>The guide is on the wrong zone.</summary>
+          <p>Press <kbd>Shift+F4</kbd> to jump to the zone you're in, or use undo on the guide. If a step is wrong, press <kbd>F6</kbd> and click report next to it.</p>
+        </details>
+      </div>
+      <p style="margin-top: 24px;"><a href="https://github.com/YanivGabay/exile-overlay#faq-and-known-issues">The full FAQ and known issues</a> · <a href="https://github.com/YanivGabay/exile-overlay/blob/main/docs/install.md">Install notes</a> · <a href="https://github.com/YanivGabay/exile-overlay/issues/new?template=bug_report.yml">Report a problem</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Exile Overlay is free and open source under the <a href="https://github.com/YanivGabay/exile-overlay/blob/main/LICENSE">MIT license</a>. Windows only, Path of Exile 1 only.</p>
+    <p>The route language and first route come from <a href="https://github.com/HeartofPhos/exile-leveling">exile-leveling</a> by HeartofPhos (MIT). Fonts: Cinzel and Alegreya Sans (SIL Open Font License).</p>
+    <p>This product isn't affiliated with or endorsed by Grinding Gear Games.</p>
+  </footer>
+</div>
+<script>
+  // Fill in the current version and installer size from GitHub; the link works without it.
+  (async () => {
+    try {
+      const r = await fetch("https://api.github.com/repos/YanivGabay/exile-overlay/releases/latest", { headers: { Accept: "application/vnd.github+json" } });
+      if (!r.ok) return;
+      const rel = await r.json();
+      const exe = (rel.assets || []).find((a) => /\.exe$/i.test(a.name));
+      if (!exe) return;
+      document.getElementById("download").href = exe.browser_download_url;
+      const mb = Math.round(exe.size / 1048576);
+      document.getElementById("release-meta").textContent = `Version ${rel.tag_name.replace(/^v/, "")}, ${mb} MB installer. Free and open source (MIT).`;
+    } catch {
+      /* keep the static link and text */
+    }
+  })();
+</script>
+</body>
+</html>
