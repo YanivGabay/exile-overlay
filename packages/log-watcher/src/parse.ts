@@ -20,7 +20,9 @@ export type LogEvent =
   | { type: "resistPenalty"; time: string; total: number }
   /** Sin's last line after the campaign (Act 10 Kitava): "May a new dawn arise!" */
   | { type: "campaignComplete"; time: string }
-  | { type: "death"; time: string; character: string };
+  | { type: "death"; time: string; character: string }
+  /** "X has joined the area." / "has left the area.": X is another player (you never join your own area). */
+  | { type: "otherPlayer"; time: string; character: string };
 
 const PREFIX = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})\b.*?\] /;
 const GENERATING = /^Generating level (\d+) area "([^"]+)"(?: with seed (\d+))?/;
@@ -32,6 +34,7 @@ const ENTERED = /^: You have entered (.+?)\.\s*$/;
 const KITAVA = /^: You have been permanently weakened by Kitava's cruel affliction\. You now have (-?\d+)% to all Resistances/;
 const NEW_DAWN = /^Sin: May a new dawn arise!/;
 const DEATH = /^: (\S+) has (?:been slain|committed suicide)\.\s*$/;
+const OTHER_PLAYER = /^: (\S+) has (?:joined|left) the area\.\s*$/;
 
 // Written when the client starts, and when the player logs out to character select.
 const LOG_OPENING = /^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) \*\*\*\*\* LOG FILE OPENING/;
@@ -40,12 +43,19 @@ const LOGIN_SERVER = /^Async connecting to \S*login\.pathofexile\.com/;
 // goes back to the login screen; its reconnect line can come a minute later.
 const DISCONNECT = /^Abnormal disconnect: /;
 
+/**
+ * A fresh copy of a captured string. Regex captures are V8 substrings that keep
+ * their parent alive: the whole multi-MB chunk the tailer read. Anything kept
+ * for long (player names, area ids, times in state) would pin those chunks.
+ */
+const own = (s: string): string => s.split("").join("");
+
 export function parseLine(line: string): LogEvent | null {
   const opening = LOG_OPENING.exec(line);
-  if (opening) return { type: "outOfGame", time: opening[1], reason: "clientStart" };
+  if (opening) return { type: "outOfGame", time: own(opening[1]), reason: "clientStart" };
   const prefix = PREFIX.exec(line);
   if (!prefix) return null;
-  const time = prefix[1];
+  const time = own(prefix[1]);
   const rest = line.slice(prefix[0].length);
 
   if (LOGIN_SERVER.test(rest)) return { type: "outOfGame", time, reason: "loginServer" };
@@ -56,21 +66,23 @@ export function parseLine(line: string): LogEvent | null {
       type: "areaGenerated",
       time,
       areaLevel: Number(m[1]),
-      areaId: m[2],
+      areaId: own(m[2]),
       seed: m[3] ? Number(m[3]) : 0,
     };
   }
   m = LEVEL_UP.exec(rest);
   if (m) {
-    return { type: "levelUp", time, character: m[1], className: m[2], level: Number(m[3]) };
+    return { type: "levelUp", time, character: own(m[1]), className: own(m[2]), level: Number(m[3]) };
   }
   m = KITAVA.exec(rest);
   if (m) return { type: "resistPenalty", time, total: Number(m[1]) };
   if (NEW_DAWN.test(rest)) return { type: "campaignComplete", time };
   m = DEATH.exec(rest);
-  if (m) return { type: "death", time, character: m[1] };
+  if (m) return { type: "death", time, character: own(m[1]) };
+  m = OTHER_PLAYER.exec(rest);
+  if (m) return { type: "otherPlayer", time, character: own(m[1]) };
   m = ENTERED.exec(rest);
-  if (m) return { type: "areaEntered", time, areaName: m[1] };
+  if (m) return { type: "areaEntered", time, areaName: own(m[1]) };
   return null;
 }
 

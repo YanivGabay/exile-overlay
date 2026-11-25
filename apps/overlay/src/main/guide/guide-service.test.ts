@@ -76,7 +76,12 @@ describe("GuideService with log events", () => {
     t.feed(t.raw(": You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."));
     expect(t.active().resistPenalty).toBe(-30);
     expect(t.state.get().tracking).toMatchObject({ kind: "resist", total: -30 });
+    // Sin's line only counts in Act 10, with the guide in the second half (it may trail behind).
     t.feed(t.raw("Sin: May a new dawn arise!"));
+    expect(t.active().timer!.finishedAt).toBeNull();
+    const edges = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
+    t.guide.pick(edges.indexOf("2_8_town"));
+    t.feed(t.enter("2_10_6"), t.raw("Sin: May a new dawn arise!"));
     expect(t.active().timer!.finishedAt).not.toBeNull();
     expect(t.state.get().settings.runs).toHaveLength(1);
     expect(t.state.get().settings.runs[0].character).toBe("Runner");
@@ -251,7 +256,7 @@ describe("GuideService with log events", () => {
       if (i % 13 === 0) t.feed(t.enter("HideoutMountain"), t.enter(route[i]));
       if (i % 31 === 0) t.feed(t.disconnect(), t.logout(), t.enter(route[i]));
     }
-    t.feed(t.raw("Sin: May a new dawn arise!"));
+    t.feed(t.enter("2_10_6"), t.raw("Sin: May a new dawn arise!")); // Sin speaks in Act 10
     expect(t.state.get().settings.runs).toHaveLength(1);
     expect(t.state.get().settings.runs[0].totalMs).toBeGreaterThan(3 * 3600_000);
     const afterCampaign = JSON.stringify(t.state.get().settings).length;
@@ -273,4 +278,53 @@ describe("GuideService with log events", () => {
     // Saved settings don't grow with play time.
     expect(JSON.stringify(s).length).toBeLessThan(afterCampaign * 1.05);
   });
+
+  it("ignores a party member who joined your map, even when they level up first (real 3.30 pattern)", () => {
+    // From a real Client.txt (2026/11/18, names changed): a level 95 character mapping,
+    // a friend joins the map and levels up before you do.
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Me_Mapper", "Witch", 2), t.levelUp("Me_Mapper", "Necromancer", 95));
+    t.feed(t.logout(), t.enter("HideoutSlum"), t.enter("MapWorldsStrand"));
+    t.feed(t.raw(": Friend_One has joined the area."), t.raw(": Friend_One (Hierophant) is now level 88"));
+    expect(t.state.get().settings.activeCharacter).toBe("Me_Mapper");
+    expect(t.state.get().settings.characters.Friend_One).toBeUndefined();
+    t.feed(t.raw(": Friend_One has left the area."), t.enter("HideoutSlum"), t.levelUp("Me_Mapper", "Necromancer", 96));
+    expect(t.active().level).toBe(96);
+    // Even in a later session (after character select), the friend is still not you.
+    t.feed(t.logout(), t.enter("HideoutSlum"), t.levelUp("Friend_One", "Hierophant", 89));
+    expect(t.state.get().settings.characters.Friend_One).toBeUndefined();
+  });
+
+  it("doesn't finish a run when Sin speaks while you carry a friend on a guessed character (real 3.30 pattern)", () => {
+    // From a real Client.txt (2026/03/12, names changed): logged in to Act 2 town, which
+    // matched an Act 2 alt; walked a friend through Act 10 without levelling; Sin spoke.
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Act2_Alt", "Duelist", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    const edges = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
+    t.guide.pick(edges.indexOf("1_2_town"));
+    t.feed(t.logout(), t.enter("1_2_town"), t.enter("HideoutMountain"), t.enter("2_10_2"));
+    t.feed(t.raw(": Friend_One has joined the area."), t.enter("2_10_6"), t.raw("Sin: May a new dawn arise!"));
+    expect(t.active().name).toBe("Act2_Alt");
+    expect(t.active().timer?.finishedAt ?? null).toBeNull();
+    expect(t.state.get().settings.runs).toHaveLength(0);
+  });
+
+  it("keeps the character you were playing after a relog, over an old one parked on that town (real 3.30 pattern)", () => {
+    // From a real Client.txt (2026/11/14, names changed): relogging in Act 10 town while the
+    // guide trailed in Act 9; an old character's saved progress sat exactly on that town.
+    const t = setup();
+    const edges = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
+    t.feed(t.enter("1_1_1"), t.levelUp("Old_Alt", "Ranger", 2));
+    t.guide.pick(edges.indexOf("2_10_town"));
+    t.feed(t.logout(), t.enter("1_1_1"), t.levelUp("Current", "Witch", 2));
+    t.guide.pick(edges.indexOf("2_9_town"));
+    t.feed(t.levelUp("Current", "Necromancer", 62));
+    for (let i = 0; i < 3; i++) {
+      t.feed(t.logout(), t.enter("2_10_town"));
+      expect(t.state.get().settings.activeCharacter).toBe("Current");
+    }
+    t.feed(t.enter("2_10_6"), t.raw("Sin: May a new dawn arise!"));
+    expect(t.state.get().settings.runs.map((r) => r.character)).toEqual(["Current"]);
+  });
 });
+

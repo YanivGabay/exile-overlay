@@ -73,6 +73,10 @@
   {
    "expect": null,
    "line": "2026/11/02 20:02:51 1794102562 587dda06 [CRIT Client 20088] Disconnected from patching server before patching completed. Try again"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 11:30:50 31468968 cff945bb [INFO Client 6676] : Friend_One has joined the area."
   }
  ],
  "3.28.0": [
@@ -123,6 +127,10 @@
   {
    "expect": null,
    "line": "2026/11/02 19:00:58 139459734 587de5a6 [CRIT Client 20532] Disconnected from patching server before patching completed. Try again"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 13:56:41 537117812 cffb06dd [INFO Client 1716] : Friend_One has joined the area."
   }
  ],
  "3.29.0": [
@@ -173,6 +181,10 @@
   {
    "expect": "campaignComplete",
    "line": "2026/11/02 05:14:43 480868015 cffb0658 [INFO Client 30420] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 23:41:51 460895968 cffb0658 [INFO Client 23284] : Friend_One has joined the area."
   }
  ],
  "3.29.1": [
@@ -211,6 +223,10 @@
   {
    "expect": "outOfGame",
    "line": "2026/11/02 20:29:08 187222843 5570c139 [INFO Client 13528] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 18:24:31 6947437 cffb065b [INFO Client 15960] : Friend_One has joined the area."
   }
  ],
  "3.29.2": [
@@ -241,6 +257,10 @@
   {
    "expect": "levelUp",
    "line": "2026/11/02 22:46:42 442910390 cffb065b [INFO Client 18100] : Tester_One (Necromancer) is now level 97"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 22:38:32 183222000 cffb065b [INFO Client 25156] : Friend_One has joined the area."
   }
  ],
  "3.29.3": [
@@ -333,6 +353,10 @@
   {
    "expect": "outOfGame",
    "line": "2026/11/02 14:33:22 322276937 5570c138 [INFO Client 6680] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 03:55:11 197586953 cffb06be [INFO Client 14784] : Friend_One has joined the area."
   }
  ]
 }

@@ -394,9 +394,12 @@ export function matchCharacter(
   candidates: CharacterCandidate[],
   areaId: string,
   ctx: TrackContext,
+  /** The character you last played (confirmed by a level-up): kept after a relog if the zone fits it at all. */
+  prefer: string | null = null,
 ): string | "new" | null {
   const act = ctx.actOf?.(areaId);
   let best: { name: string; score: number; lastSeen: string } | null = null;
+  let preferredScore = 0;
   for (const c of candidates) {
     // An endgame character the overlay never tracked through the campaign sits at
     // step 0; it must not claim a fresh character's Twilight Strand.
@@ -407,11 +410,16 @@ export function matchCharacter(
     else if (guide.edges[p + 1] === areaId) score = 3;
     else if (act !== undefined && act === ctx.actOf?.(guide.edges[p])) score = 2;
     else if (act !== undefined && act === (ctx.actOf?.(guide.edges[p]) ?? -9) + 1) score = 1;
+    if (c.name === prefer) preferredScore = score;
     if (score === 0) continue;
     if (!best || score > best.score || (score === best.score && c.lastSeen > best.lastSeen)) {
       best = { name: c.name, score, lastSeen: c.lastSeen };
     }
   }
   if (areaId === guide.edges[0] && (!best || best.score < 4)) return "new";
+  // Relogs (instance resets, disconnects) far outnumber character switches, and the
+  // guide can trail a few zones behind: an old character parked exactly on this
+  // town must not take over from the one you were just playing.
+  if (prefer && areaId !== guide.edges[0] && preferredScore > 0) return prefer;
   return best?.name ?? null;
 }

@@ -48,6 +48,10 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
    * character select (an outOfGame event), so other names are ignored until then.
    */
   private sessionName: string | null = null;
+  /** Names seen joining or leaving your area: other players, never you. */
+  private otherPlayers = new Set<string>();
+  /** The last character confirmed by a level-up; survives character select, preferred after a relog. */
+  private lastPlayed: string | null = null;
   /** Unknown character: don't touch anyone's progress until we know who it is. */
   private paused = false;
   private lastResync: { areaId: string; order: number[]; index: number; time: number } | null = null;
@@ -238,6 +242,11 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       }
       return;
     }
+    if (e.type === "otherPlayer") {
+      if (this.otherPlayers.size >= 500) this.otherPlayers.clear(); // bounded in endless sessions
+      this.otherPlayers.add(e.character);
+      return;
+    }
     if (replay) {
       if (e.type === "levelUp") this.onLevelUp(e.character, e.className, e.level);
       return;
@@ -252,7 +261,9 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       return;
     }
     if (e.type === "campaignComplete") {
-      if (!this.paused) this.finishRun(logTimeToMs(e.time));
+      // Sin's line also shows while you help a friend through Act 10 on a character
+      // the overlay may have guessed wrong (one still in Act 2, say).
+      if (!this.paused && this.canFinishCampaign()) this.finishRun(logTimeToMs(e.time));
       return;
     }
     if (e.type === "levelUp") {
@@ -269,7 +280,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         lastSeen: c.lastSeen,
         level: c.level,
       }));
-      const match = candidates.length ? matchCharacter(this.compiled, candidates, e.areaId, this.trackCtx()) : this.activeKey();
+      const match = candidates.length ? matchCharacter(this.compiled, candidates, e.areaId, this.trackCtx(), this.lastPlayed) : this.activeKey();
       const active = this.activeKey();
       if (match === "new") {
         const fresh: CharacterProfile = {
@@ -327,6 +338,18 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     this.saveProfile({ ...this.profile(), timer });
   }
 
+  /**
+   * Whether Sin's line can belong to the active character: you are in Act 10,
+   * and its guide is at least in the second half of the campaign (the tracker
+   * can trail a few zones behind, but never by five acts).
+   */
+  private canFinishCampaign(): boolean {
+    const areas = this.bundle?.data.Areas ?? {};
+    const here = this.state.get().game.area?.id ?? "";
+    const part2 = this.compiled?.edges.findIndex((id) => areas[id]?.act === 6) ?? -1;
+    return areas[here]?.act === 10 && part2 >= 0 && this.profile().progress.activeEdge >= part2;
+  }
+
   private currentAct(): number {
     const edge = this.profile().progress.activeEdge;
     return this.bundle?.data.Areas[this.compiled?.edges[edge] ?? ""]?.act ?? 1;
@@ -359,8 +382,10 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   /** A level-up names the character for sure. */
   private onLevelUp(name: string, className: string, level: number) {
-    if (this.sessionName !== null && name !== this.sessionName) return; // a party member
+    if (this.otherPlayers.has(name)) return; // joined or left your area: a party member
+    if (this.sessionName !== null && name !== this.sessionName) return; // a party member we never saw join
     this.sessionName = name;
+    this.lastPlayed = name;
     const settings = this.state.settings;
     const existing = settings.characters[name];
     const activeIsDefault = settings.activeCharacter === null;

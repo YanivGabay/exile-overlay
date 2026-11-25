@@ -103,6 +103,8 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
       // Only the latest area and level-up matter when catching up.
       const lastArea = events.findLast((e) => e.type === "areaGenerated");
       const lastLevel = events.findLast((e) => e.type === "levelUp");
+      // Other players seen in the window first, so a party member's level-up isn't taken for yours.
+      for (const e of events) if (e.type === "otherPlayer") this.apply(e, true);
       for (const e of [lastLevel, lastArea]) if (e) this.apply(e, true);
       // Whichever came last decides whether we are in a zone or at character select.
       const lastPresence = events.findLast((e) => e.type === "areaGenerated" || e.type === "outOfGame");

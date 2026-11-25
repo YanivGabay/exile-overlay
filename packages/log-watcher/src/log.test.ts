@@ -126,6 +126,12 @@ describe("log formats of the last five patches (3.26 to 3.30)", () => {
     });
   }
 
+  it("recognises other players joining and leaving your area", () => {
+    expect(parseLine(`${P} [INFO Client 1] : Friend_One has joined the area.`)).toMatchObject({ type: "otherPlayer", character: "Friend_One" });
+    expect(parseLine(`${P} [INFO Client 1] : Friend_One has left the area.`)).toMatchObject({ type: "otherPlayer", character: "Friend_One" });
+    expect(parseLine(`${P} [INFO Client 1] #Bob: Friend_One has joined the area.`)).toBeNull();
+  });
+
   it("treats a disconnect as leaving the game", () => {
     for (const why of ["An unexpected disconnection occurred.", "The realm is currently down for maintenance. Try again later.", "Game server lost contact with the realm."])
       expect(parseLine(`${P} [INFO Client 1] Abnormal disconnect: ${why}`)).toMatchObject({ type: "outOfGame", reason: "disconnect" });
