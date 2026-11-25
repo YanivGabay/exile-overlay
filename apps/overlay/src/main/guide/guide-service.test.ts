@@ -74,10 +74,13 @@ describe("GuideService with log events", () => {
     expect(t.state.get().settings.runs[0].character).toBe("Runner");
   });
 
-  it("names the zone you're in from the guide data (for the connection status)", () => {
+  it("names the zone you're in from the guide data (for the connection status)", async () => {
     const t = setup();
+    t.guide.start(); // the zone names come from the loaded guide
     t.feed(t.enter("1_1_2"));
+    await new Promise((r) => setTimeout(r, 10));
     expect(t.state.get().game.area).toMatchObject({ id: "1_1_2", name: "The Coast" });
+    t.guide.stop();
   });
 
   it("keeps timer and dismissals when a fresh character gets its name", () => {

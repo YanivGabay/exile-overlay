@@ -65,6 +65,13 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         this.recompile();
       if (next.guide.bundleUrl !== prev.guide.bundleUrl) void this.checkRemote();
     });
+    // Name the zone you're in from the guide data when the log didn't (on startup only
+    // the zone's id is replayed; the English "You have entered" line may be missing).
+    state.on("change", (st) => {
+      const area = st.game.area;
+      const name = area && !area.name ? this.bundle?.data.Areas[area.id]?.name : undefined;
+      if (area && name) this.state.set("game", { ...st.game, area: { ...area, name } });
+    });
   }
 
   start() {
@@ -223,13 +230,6 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   onLogEvent(e: LogEvent, replay: boolean) {
-    if (e.type === "areaGenerated") {
-      // Zone names from the guide data: works on every client language, and on
-      // startup, when only the zone's id is replayed from the log.
-      const name = this.bundle?.data.Areas[e.areaId]?.name;
-      const area = this.state.get().game.area;
-      if (name && area?.id === e.areaId && area.name !== name) this.state.set("game", { ...this.state.get().game, area: { ...area, name } });
-    }
     if (e.type === "outOfGame") {
       if (!replay) {
         this.identifyPending = true;
