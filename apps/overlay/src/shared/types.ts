@@ -92,7 +92,8 @@ export interface Settings {
 }
 
 export type LogStatus =
-  | { kind: "searching" }
+  /** `looked`: where the last search looked, in plain lines (absent before the first search). */
+  | { kind: "searching"; looked?: string[] }
   | { kind: "watching"; path: string; sizeBytes: number }
   | { kind: "error"; message: string };
 
@@ -197,6 +198,9 @@ export type Command =
   /** A renderer caught an error: log it in the app log. */
   | { type: "logError"; where: string; message: string; stack?: string }
   | { type: "copyReport" }
+  /** Copy a bug report about one crash from the local crash log (by its time). */
+  | { type: "copyCrashReport"; at: string }
+  | { type: "clearCrashes" }
   /** Copy the report and open the bug form. */
   | { type: "reportProblem" }
   | { type: "openLogFolder" }

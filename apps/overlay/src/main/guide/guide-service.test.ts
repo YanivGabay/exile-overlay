@@ -163,4 +163,11 @@ describe("GuideService with log events", () => {
     expect(render!.steps.length).toBeGreaterThan(before);
     expect(Object.values(render!.gems).map((g) => g.name)).toContain("Sunder");
   });
+
+  it("names the zone you're in from the guide data (for the connection status)", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_2"));
+    expect(t.state.get().game.area).toMatchObject({ id: "1_1_2", name: "The Coast" });
+  });
 });
+

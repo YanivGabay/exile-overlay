@@ -12,7 +12,7 @@
 import { BrowserWindow, app, ipcMain } from "electron";
 import { join } from "node:path";
 import { DEFAULT_WIDGET_LAYOUT } from "../shared/defaults.js";
-import { buildReport } from "../shared/report.js";
+import { buildReport, redact } from "../shared/report.js";
 import { IPC, type AppState } from "../shared/types.js";
 import { createCommandHandler } from "./commands.js";
 import { DEFAULT_GUIDE_URL, testEnv, testRun } from "./config.js";
@@ -22,6 +22,7 @@ import { AppStateStore } from "./state/app-state.js";
 import { SettingsStore } from "./state/settings-store.js";
 import { AppLog } from "./support/app-log.js";
 import { installCrashHandlers, watchRenderer } from "./support/crash.js";
+import { CrashLog } from "./support/crash-log.js";
 import { Updates } from "./support/updates.js";
 import { startCapture } from "./testing/capture.js";
 import { startTour } from "./testing/tour.js";
@@ -38,11 +39,14 @@ if (!app.requestSingleInstanceLock()) app.quit();
 const appLog = new AppLog(join(app.getPath("userData"), "logs"));
 appLog.captureConsole();
 let reportState: AppState | null = null;
+const characterNames = () =>
+  reportState ? [reportState.game.character?.name, ...Object.keys(reportState.settings.characters)].filter((n): n is string => !!n) : [];
 const makeReport = (error: { message: string; stack?: string; where: string } | null = null) =>
   reportState
     ? buildReport({ state: reportState, platform: `${process.platform} ${process.getSystemVersion()}`, electron: process.versions.electron, logTail: appLog.tail(), error })
     : appLog.tail();
-const crashDeps = { log: appLog, report: makeReport, quiet: testRun };
+const crashLog = new CrashLog(join(app.getPath("userData"), "logs"), app.getVersion());
+const crashDeps = { log: appLog, report: makeReport, quiet: testRun, crashes: crashLog };
 const crash = installCrashHandlers(crashDeps);
 // Every page (overlay, settings, test windows) reloads itself after a crash.
 app.on("web-contents-created", (_e, wc) => watchRenderer(wc, crashDeps, crash.friendly));
@@ -101,7 +105,7 @@ app.whenReady().then(() => {
   const clickTest = testEnv.clickTest ? new Array<string>() : null;
   ipcMain.handle(IPC.getState, () => state.get());
   ipcMain.handle(IPC.getGuide, () => guide.getRender());
-  ipcMain.handle(IPC.command, createCommandHandler({ state, guide, overlay, updates, appLog, makeReport: () => makeReport(), clickTest }));
+  ipcMain.handle(IPC.command, createCommandHandler({ state, guide, overlay, updates, appLog, makeReport: (error) => makeReport(error ?? null), crashLog, clickTest }));
   ipcMain.handle("diagnostics:get", () => ({
     logDetail: log.lastDetail,
     hotkeyFailures: hotkeys.failed,
@@ -111,6 +115,8 @@ app.whenReady().then(() => {
     logDir: appLog.dir,
     platform: `${process.platform} ${process.getSystemVersion()}`,
     electron: process.versions.electron,
+    // Local only; redacted like a report, since the page could show it in a screenshot.
+    crashes: crashLog.list().map((c) => ({ ...c, message: redact(c.message, characterNames()), stack: c.stack ? redact(c.stack, characterNames()) : undefined })),
   }));
 
   // ----- Test hooks (never active in a normal run) -----

@@ -46,3 +46,19 @@ table.keys td { padding: 3px 14px 3px 0; color: #cfc4ae; }
 .badge-new { font-size: 12px; font-weight: 600; color: #1a140b; background: var(--gold); border-radius: 3px; padding: 1px 6px; }
 .page-error { max-width: 640px; }
 .page-error .row { margin: 16px 0 8px; }
+
+/* Connection banner (Setup, Diagnostics): one clear "connected to your game" answer. */
+.connection { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; margin: 12px 0 16px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel-solid); }
+.connection strong { font-size: 15px; }
+.connection-dot { flex: none; width: 12px; height: 12px; margin-top: 4px; border-radius: 50%; background: var(--muted, #8a7f70); }
+.connection-connected { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+.connection-connected .connection-dot { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 20%, transparent); }
+.connection-connected strong { color: var(--ok); }
+.connection-problem { border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
+.connection-problem .connection-dot { background: var(--warn); }
+.connection-problem strong { color: var(--warn); }
+.connection-looked { margin: 2px 0 6px; padding-left: 18px; }
+.crashes td { vertical-align: top; }
+.crashes td:first-child { white-space: nowrap; }
+.crash-stack { max-height: 160px; overflow: auto; font-size: 11px; white-space: pre-wrap; background: #100d0a; padding: 6px 8px; border-radius: 4px; }
+.crashes td:last-child button { white-space: nowrap; }

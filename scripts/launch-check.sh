@@ -33,6 +33,8 @@ cmd "settings diagnostics s4-diagnostics"; sleep 3
 cmd "click Report a problem"; sleep 3
 # 2. Crashes: main-process error is logged (no dialog in test runs), the overlay page reloads.
 cmd "crash main"; cmd "crash overlay"; cmd "shot o3-after-overlay-crash"; sleep 8
+cmd "settings diagnostics s4b-diagnostics-crash-log #crash-log"; sleep 3
+cmd "click Copy for bug report"; sleep 3
 # 3. After an update: notice in the overlay, What's new tab, update ready.
 cmd 'set {"firstRunDone":true,"lastSeenVersion":"0.0.9"}'; cmd "shot o4-whats-new-notice"; sleep 3
 cmd 'update {"kind":"ready","version":"0.1.3"}'; cmd "settings whatsnew s5-whats-new"; sleep 3

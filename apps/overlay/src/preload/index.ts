@@ -10,6 +10,8 @@ export interface Diagnostics {
   logDir: string;
   platform: string;
   electron: string;
+  /** Local crash log, newest first (redacted). */
+  crashes: { at: string; where: string; message: string; stack?: string; version: string }[];
 }
 
 const api = {

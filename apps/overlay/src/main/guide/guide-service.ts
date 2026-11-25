@@ -223,6 +223,13 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   onLogEvent(e: LogEvent, replay: boolean) {
+    if (e.type === "areaGenerated") {
+      // Zone names from the guide data: works on every client language, and on
+      // startup, when only the zone's id is replayed from the log.
+      const name = this.bundle?.data.Areas[e.areaId]?.name;
+      const area = this.state.get().game.area;
+      if (name && area?.id === e.areaId && area.name !== name) this.state.set("game", { ...this.state.get().game, area: { ...area, name } });
+    }
     if (e.type === "outOfGame") {
       if (!replay) {
         this.identifyPending = true;

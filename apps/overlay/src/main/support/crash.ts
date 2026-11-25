@@ -1,5 +1,6 @@
 import { app, clipboard, dialog, shell, type WebContents } from "electron";
 import { describeError, type AppLog } from "./app-log.js";
+import type { CrashLog } from "./crash-log.js";
 import { bugReportUrl } from "../../shared/support-links.js";
 
 /**
@@ -13,6 +14,8 @@ export interface CrashDeps {
   report: (error: { message: string; stack?: string; where: string }) => string;
   /** Test runs (offscreen tours) log only: no dialog on the desktop. */
   quiet: boolean;
+  /** Local-only crash list shown in Diagnostics. */
+  crashes?: CrashLog;
 }
 
 export function installCrashHandlers(deps: CrashDeps) {
@@ -22,6 +25,7 @@ export function installCrashHandlers(deps: CrashDeps) {
   async function friendly(where: string, err: unknown) {
     const { message, stack } = describeError(err);
     deps.log.write("error", `${where}: ${stack ?? message}`);
+    deps.crashes?.record({ where, message, stack });
     if (deps.quiet || dialogOpen || shown >= 2 || !app.isReady()) return;
     dialogOpen = true;
     shown++;
@@ -32,7 +36,7 @@ export function installCrashHandlers(deps: CrashDeps) {
         message: "Exile Overlay hit a problem",
         detail:
           `${message}\n\nYour guide progress and settings are saved. You can keep playing; if the overlay misbehaves, restart it.\n\n` +
-          "Report a problem copies a report (no account or character names) and opens the bug form on GitHub: paste the report there.",
+          "Report a problem copies a report (no account or character names) and opens the bug form on GitHub: paste the report there. The crash is also kept on this PC under Settings → Diagnostics; nothing is sent anywhere.",
         buttons: ["Keep running", "Report a problem", "Open log folder", "Restart"],
         defaultId: 0,
         cancelId: 0,
@@ -77,6 +81,7 @@ export function watchRenderer(contents: WebContents, deps: CrashDeps, friendly: 
     crashes.push(now);
     while (crashes.length && now - crashes[0] > 60_000) crashes.shift();
     deps.log.write("error", `${name} page crashed: ${details.reason} (exit ${details.exitCode}); crash ${crashes.length} this minute`);
+    deps.crashes?.record({ where: `${name} page`, message: `The ${name} page crashed (${details.reason}, exit code ${details.exitCode}) and was reloaded.` });
     if (contents.isDestroyed()) return;
     if (crashes.length >= 3) friendly(`${name} page`, new Error(`The ${name} page keeps crashing (${details.reason}).`));
     else contents.reload();

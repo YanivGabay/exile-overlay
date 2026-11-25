@@ -46,6 +46,7 @@ All keys can be changed under Settings → Hotkeys. Settings opens from the tray
 - **Reads** the game's log file (`Client.txt`) for your zone, character name, class and level. Nothing else on your PC.
 - **Downloads** guide updates from [exile-overlay-guides](https://github.com/YanivGabay/exile-overlay-guides), app updates from this repo's releases, and the build links you paste.
 - **Never** reads or changes game memory or files, sends keys or clicks to the game, or uploads anything about you.
+- **Crashes** are kept on your PC only (Settings → Diagnostics → Crash log). There is no telemetry; a crash report leaves your PC only if you copy it and paste it into a bug report yourself.
 - Draws in its own transparent window on top of the game; it never moves or resizes the game window.
 
 ## FAQ and known issues
@@ -66,7 +67,7 @@ Many keyboards send special functions from the F-key row unless you hold **Fn** 
 Click the small **–** tab on the top edge of Gem links, Passive tree or Vendor search to fold it to a tab; click the tab to open it again. To hide a panel completely, use **Hide** in edit mode (F6) or untick it under Settings → Overlay.
 
 **It says it can't find the game log (Client.txt).**
-It's found automatically from the running game, so start the game first. If it still isn't found, Settings → Diagnostics → **Choose Client.txt…** and pick `logs\Client.txt` in the game folder:
+It's found automatically: from the running game, the standalone client's install folder in Windows, every Steam library, and the usual game folders on drives C: to J:. If it still isn't found, the Setup screen lists where it looked; choose `logs\Client.txt` in the game folder with **Choose Client.txt…**:
 - Steam: `…\steamapps\common\Path of Exile\logs\Client.txt`
 - Standalone: `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`
 
