@@ -326,5 +326,14 @@ describe("GuideService with log events", () => {
     t.feed(t.enter("2_10_6"), t.raw("Sin: May a new dawn arise!"));
     expect(t.state.get().settings.runs.map((r) => r.character)).toEqual(["Current"]);
   });
+
+  it("a level-up replayed at startup doesn't lock the session to a party member", () => {
+    const t = setup();
+    // Overlay started mid-session: the last level-up in the log was a friend's
+    // (they joined before the replayed part of the log).
+    t.guide.onLogEvent(parseLine(t.levelUp("Friend_One", "Hierophant", 40)) as LogEvent, true);
+    t.feed(t.enter("1_2_town"), t.levelUp("Me_Now", "Witch", 20));
+    expect(t.state.get().settings.activeCharacter).toBe("Me_Now");
+  });
 });
 

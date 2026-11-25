@@ -248,7 +248,8 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       return;
     }
     if (replay) {
-      if (e.type === "levelUp") this.onLevelUp(e.character, e.className, e.level);
+      // Replayed at startup: may be a party member's, so it doesn't bind the session.
+      if (e.type === "levelUp") this.onLevelUp(e.character, e.className, e.level, false);
       return;
     }
     if (e.type === "death") {
@@ -381,11 +382,13 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   /** A level-up names the character for sure. */
-  private onLevelUp(name: string, className: string, level: number) {
+  private onLevelUp(name: string, className: string, level: number, bind = true) {
     if (this.otherPlayers.has(name)) return; // joined or left your area: a party member
     if (this.sessionName !== null && name !== this.sessionName) return; // a party member we never saw join
-    this.sessionName = name;
-    this.lastPlayed = name;
+    if (bind) {
+      this.sessionName = name;
+      this.lastPlayed = name;
+    }
     const settings = this.state.settings;
     const existing = settings.characters[name];
     const activeIsDefault = settings.activeCharacter === null;
