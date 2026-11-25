@@ -42,16 +42,20 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   private buildError: string | null = null;
   /** Set after a login: the next zone tells us which character is played. */
   private identifyPending = true;
-  /**
-   * The character this play session belongs to. Party members' level-ups look
-   * exactly like yours in Client.txt; you can only change character through
-   * character select (an outOfGame event), so other names are ignored until then.
-   */
-  private sessionName: string | null = null;
   /** Names seen joining or leaving your area: other players, never you. */
   private otherPlayers = new Set<string>();
   /** The last character confirmed by a level-up; survives character select, preferred after a relog. */
   private lastPlayed: string | null = null;
+  /**
+   * The last switch a level-up made this session, to undo it if that name turns
+   * out to be another player (their "has joined/left the area" line comes later,
+   * e.g. when you walked into their instance and they leveled first).
+   */
+  private lastSwitch: { name: string; prevActive: string | null; prevCharacters: Record<string, CharacterProfile>; prevLastPlayed: string | null } | null = null;
+  /** Time of the latest live log line: "last played" uses game time, not the clock. */
+  private logNow: string | null = null;
+  /** The zone you were in when you last went to character select. */
+  private areaBeforeLogout: string | null = null;
   /** Unknown character: don't touch anyone's progress until we know who it is. */
   private paused = false;
   private lastResync: { areaId: string; order: number[]; index: number; time: number } | null = null;
@@ -130,7 +134,8 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   private saveProgress(progress: GuideProgress) {
     const p = this.profile();
     if (p.progress.activeEdge === progress.activeEdge && p.progress.completed === progress.completed) return;
-    this.saveProfile({ ...p, progress, lastSeen: new Date().toISOString() });
+    // lastSeen is stamped by level-ups only: a wrong guess being tracked must not look "recently played".
+    this.saveProfile({ ...p, progress });
   }
 
   private saveProfile(profile: CharacterProfile) {
@@ -140,6 +145,24 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   private now() {
     return new Date().toISOString();
+  }
+
+  /** When a character was last played: the game's log time when we have it. */
+  private seen() {
+    return this.logNow ?? this.now();
+  }
+
+  /** The level-up that switched to `lastSwitch.name` was another player's: go back. */
+  private undoSwitch() {
+    const sw = this.lastSwitch!;
+    this.lastSwitch = null;
+    const bogus = this.state.settings.characters[sw.name];
+    const key = sw.prevActive ?? DEFAULT_CHARACTER;
+    const characters = { ...sw.prevCharacters };
+    // Zones since the switch were yours: keep that progress and timer.
+    if (bogus && characters[key]) characters[key] = { ...characters[key], progress: bogus.progress, timer: bogus.timer ?? characters[key].timer };
+    this.lastPlayed = sw.prevLastPlayed;
+    this.state.replaceSettings({ ...this.state.settings, characters, activeCharacter: sw.prevActive });
   }
 
   private moveTo(edge: number, move: Omit<ManualMove, "kind" | "to">) {
@@ -215,7 +238,6 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
 
   selectCharacter(name: string) {
     this.paused = false;
-    this.sessionName = name === DEFAULT_CHARACTER ? null : name;
     this.state.set("tracking", null);
     this.state.replaceSettings({ ...this.state.settings, activeCharacter: name === DEFAULT_CHARACTER ? null : name });
   }
@@ -234,10 +256,12 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   }
 
   onLogEvent(e: LogEvent, replay: boolean) {
+    if (!replay) this.logNow = new Date(logTimeToMs(e.time)).toISOString();
     if (e.type === "outOfGame") {
       if (!replay) {
         this.identifyPending = true;
-        this.sessionName = null;
+        this.lastSwitch = null;
+        this.areaBeforeLogout = this.state.get().game.area?.id ?? this.areaBeforeLogout;
         if (!this.paused) this.updateTimer((t) => pause(t, logTimeToMs(e.time)));
       }
       return;
@@ -245,6 +269,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
     if (e.type === "otherPlayer") {
       if (this.otherPlayers.size >= 500) this.otherPlayers.clear(); // bounded in endless sessions
       this.otherPlayers.add(e.character);
+      if (this.lastSwitch?.name === e.character && this.state.settings.activeCharacter === e.character) this.undoSwitch();
       return;
     }
     if (replay) {
@@ -281,7 +306,17 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         lastSeen: c.lastSeen,
         level: c.level,
       }));
-      const match = candidates.length ? matchCharacter(this.compiled, candidates, e.areaId, this.trackCtx(), this.lastPlayed) : this.activeKey();
+      // Back in the act you just left (logging out drops you in that act's town): a relog,
+      // instance reset or reconnect, so the same character. A different act may be a switch.
+      const ctx = this.trackCtx();
+      const sameAct =
+        this.areaBeforeLogout !== null && ctx.actOf(this.areaBeforeLogout) !== undefined && ctx.actOf(this.areaBeforeLogout) === ctx.actOf(e.areaId);
+      const relog = sameAct && e.areaId !== this.compiled.edges[0] && this.lastPlayed !== null && candidates.some((c) => c.name === this.lastPlayed);
+      const match = relog
+        ? this.lastPlayed!
+        : candidates.length
+          ? matchCharacter(this.compiled, candidates, e.areaId, ctx, this.lastPlayed, this.seen())
+          : this.activeKey();
       const active = this.activeKey();
       if (match === "new") {
         const fresh: CharacterProfile = {
@@ -290,7 +325,7 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
           level: null,
           progress: INITIAL_PROGRESS,
           pobCode: null,
-          lastSeen: this.now(),
+          lastSeen: this.seen(),
         };
         this.paused = false;
         this.state.replaceSettings({
@@ -384,12 +419,9 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
   /** A level-up names the character for sure. */
   private onLevelUp(name: string, className: string, level: number, bind = true) {
     if (this.otherPlayers.has(name)) return; // joined or left your area: a party member
-    if (this.sessionName !== null && name !== this.sessionName) return; // a party member we never saw join
-    if (bind) {
-      this.sessionName = name;
-      this.lastPlayed = name;
-    }
     const settings = this.state.settings;
+    const prevLastPlayed = this.lastPlayed;
+    if (bind) this.lastPlayed = name;
     const existing = settings.characters[name];
     const activeIsDefault = settings.activeCharacter === null;
     const fromDefault = !existing && activeIsDefault && !this.paused ? settings.characters[DEFAULT_CHARACTER] : undefined;
@@ -407,11 +439,13 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
       level,
       progress,
       pobCode: existing?.pobCode ?? fromDefault?.pobCode ?? null,
-      lastSeen: this.now(),
+      lastSeen: this.seen(),
     };
     const characters = { ...settings.characters, [name]: profile };
     if (fromDefault) delete characters[DEFAULT_CHARACTER];
     const switching = settings.activeCharacter !== name && !fromDefault;
+    if (bind && settings.activeCharacter !== name)
+      this.lastSwitch = { name, prevActive: settings.activeCharacter, prevCharacters: settings.characters, prevLastPlayed };
     this.paused = false;
     this.state.replaceSettings({ ...settings, characters, activeCharacter: name });
     if (switching) this.notice("switched", name, this.state.get().game.area?.id ?? "", this.now());

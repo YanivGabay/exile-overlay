@@ -213,17 +213,32 @@ describe("GuideService with log events", () => {
     expect(t.active().timer!.elapsedMs).toBeLessThan(60_000);
   });
 
-  it("ignores a party member's level-up until the next character select", () => {
+  it("walking into a friend's instance: their level-up switches, their joined/left line undoes it", () => {
     const t = setup();
     t.feed(t.enter("1_1_1"), t.levelUp("Me", "Ranger", 2), t.enter("1_1_town"), t.enter("1_1_2"));
-    t.feed(t.levelUp("PartyFriend", "Witch", 3), t.enter("1_1_3"));
+    // You enter a zone the friend is already in: no "joined" line for them. They level first.
+    t.feed(t.logout(), t.enter("1_1_2"), t.levelUp("PartyFriend", "Witch", 3));
+    expect(t.state.get().settings.activeCharacter).toBe("PartyFriend");
+    t.feed(t.enter("1_1_3"));
+    // They follow you into the next zone: now we know they're another player.
+    t.feed(t.raw(": PartyFriend has joined the area."));
     expect(t.state.get().settings.activeCharacter).toBe("Me");
     expect(t.state.get().settings.characters.PartyFriend).toBeUndefined();
+    // The zone you entered meanwhile counts for you.
+    expect(t.active().progress.activeEdge).toBeGreaterThan(2);
+    t.feed(t.levelUp("PartyFriend", "Witch", 4));
+    expect(t.state.get().settings.activeCharacter).toBe("Me");
+    // Your own level-up always names you.
     t.feed(t.levelUp("Me", "Ranger", 3));
     expect(t.active().level).toBe(3);
-    // After character select, another name is a real switch.
-    t.feed(t.logout(), t.enter("2_6_town"), t.levelUp("Other", "Duelist", 50));
-    expect(t.state.get().settings.activeCharacter).toBe("Other");
+  });
+
+  it("your own level-up corrects a friend's switch even without a joined line", () => {
+    const t = setup();
+    t.feed(t.enter("1_1_1"), t.levelUp("Me", "Ranger", 2), t.enter("1_1_town"), t.enter("1_1_2"));
+    t.feed(t.logout(), t.enter("1_1_2"), t.levelUp("PartyFriend", "Witch", 3), t.levelUp("Me", "Ranger", 3), t.levelUp("Me", "Ranger", 4));
+    expect(t.state.get().settings.activeCharacter).toBe("Me");
+    expect(t.active().level).toBe(4);
   });
 
   it("pauses the clock on a disconnect and picks the same character back up", () => {
@@ -316,6 +331,8 @@ describe("GuideService with log events", () => {
     const edges = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
     t.feed(t.enter("1_1_1"), t.levelUp("Old_Alt", "Ranger", 2));
     t.guide.pick(edges.indexOf("2_10_town"));
+    t.feed(t.enter("2_10_town"));
+    t.advance(120 * 24 * 3600); // the old character was last played months ago
     t.feed(t.logout(), t.enter("1_1_1"), t.levelUp("Current", "Witch", 2));
     t.guide.pick(edges.indexOf("2_9_town"));
     t.feed(t.levelUp("Current", "Necromancer", 62));
@@ -334,6 +351,20 @@ describe("GuideService with log events", () => {
     t.guide.onLogEvent(parseLine(t.levelUp("Friend_One", "Hierophant", 40)) as LogEvent, true);
     t.feed(t.enter("1_2_town"), t.levelUp("Me_Now", "Witch", 20));
     expect(t.state.get().settings.activeCharacter).toBe("Me_Now");
+  });
+
+  it("switching between two characters played the same day goes to the one that fits the zone", () => {
+    // Review finding: Main_A in Act 3, Alt_B parked exactly on the Act 4 town, both played today.
+    const t = setup();
+    const edges = (t.guide as unknown as { compiled: { edges: string[] } }).compiled.edges;
+    t.feed(t.enter("1_1_1"), t.levelUp("Alt_B", "Ranger", 2));
+    t.guide.pick(edges.indexOf("1_4_town"));
+    t.feed(t.enter("1_4_town"));
+    t.feed(t.logout(), t.enter("1_1_1"), t.levelUp("Main_A", "Witch", 2));
+    t.guide.pick(edges.indexOf("1_3_town"));
+    t.feed(t.enter("1_3_town"), t.levelUp("Main_A", "Witch", 30));
+    t.feed(t.logout(), t.enter("1_4_town"));
+    expect(t.state.get().settings.activeCharacter).toBe("Alt_B");
   });
 });
 

@@ -396,10 +396,13 @@ export function matchCharacter(
   ctx: TrackContext,
   /** The character you last played (confirmed by a level-up): kept after a relog if the zone fits it at all. */
   prefer: string | null = null,
+  /** Now (ISO, game time): a rival played in the last two days is a real switch, not a stale character. */
+  now: string | null = null,
 ): string | "new" | null {
   const act = ctx.actOf?.(areaId);
   let best: { name: string; score: number; lastSeen: string } | null = null;
   let preferredScore = 0;
+  const scored: { score: number; lastSeen: string }[] = [];
   for (const c of candidates) {
     // An endgame character the overlay never tracked through the campaign sits at
     // step 0; it must not claim a fresh character's Twilight Strand.
@@ -411,6 +414,7 @@ export function matchCharacter(
     else if (act !== undefined && act === ctx.actOf?.(guide.edges[p])) score = 2;
     else if (act !== undefined && act === (ctx.actOf?.(guide.edges[p]) ?? -9) + 1) score = 1;
     if (c.name === prefer) preferredScore = score;
+    else scored.push({ score, lastSeen: c.lastSeen });
     if (score === 0) continue;
     if (!best || score > best.score || (score === best.score && c.lastSeen > best.lastSeen)) {
       best = { name: c.name, score, lastSeen: c.lastSeen };
@@ -420,6 +424,10 @@ export function matchCharacter(
   // Relogs (instance resets, disconnects) far outnumber character switches, and the
   // guide can trail a few zones behind: an old character parked exactly on this
   // town must not take over from the one you were just playing.
-  if (prefer && areaId !== guide.edges[0] && preferredScore > 0) return prefer;
+  // Unless another character that fits better was played recently: then you're
+  // switching characters (two leveling characters at league start).
+  const recent = (t: string) => now !== null && Date.parse(now) - Date.parse(t) < 2 * 24 * 3600_000;
+  const recentRival = scored.some((r) => r.score > preferredScore && recent(r.lastSeen));
+  if (prefer && areaId !== guide.edges[0] && preferredScore > 0 && !recentRival) return prefer;
   return best?.name ?? null;
 }
