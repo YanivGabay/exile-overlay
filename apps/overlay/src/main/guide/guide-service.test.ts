@@ -169,5 +169,4 @@ describe("GuideService with log events", () => {
     expect(render!.steps.length).toBeGreaterThan(before);
     expect(Object.values(render!.gems).map((g) => g.name)).toContain("Sunder");
   });
-
 });
