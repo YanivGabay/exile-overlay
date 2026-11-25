@@ -120,12 +120,13 @@ export function readRegistryValue(key: string, value: string): Promise<string | 
 }
 
 // The log search retries every few seconds until the game shows up; the registry
-// doesn't change that fast, so ask it at most once a minute.
+// and disks rarely change, so ask at most every 10 minutes (a running game is still
+// found at once through its process).
 const hintCache = new Map<Game, { at: number; hints: Promise<InstallHints> }>();
 
 export function readInstallHints(game: Game): Promise<InstallHints> {
   const hit = hintCache.get(game);
-  if (hit && Date.now() - hit.at < 60_000) return hit.hints;
+  if (hit && Date.now() - hit.at < 10 * 60_000) return hit.hints;
   const hints = queryInstallHints(game);
   hintCache.set(game, { at: Date.now(), hints });
   return hints;
