@@ -23,7 +23,7 @@ describe("finding the game's log on a fresh install", () => {
 		}
 	}
 }`;
-  const hints = (over: Partial<InstallHints> = {}): InstallHints => ({ standalone: [], steamRoot: null, steamLibrariesVdf: null, ...over });
+  const hints = (over: Partial<InstallHints> = {}): InstallHints => ({ standalone: [], steamRoot: null, steamLibrariesVdf: null, drives: ["C", "D", "F"], ...over });
   const deps = (files: Record<string, number>, h = hints(), processes: { name: string; path: string | null }[] = []): LocateDeps => ({
     listProcesses: async () => processes,
     hints: async () => h,
@@ -73,4 +73,18 @@ describe("finding the game's log on a fresh install", () => {
     expect(r.searched!.length).toBeGreaterThan(20);
     expect(r.detail).toMatch(/Start the game/);
   });
+
+  it("scans only local fixed disks, never a mapped network drive", () => {
+    const dirs = candidateInstallDirs("poe1", hints({ drives: ["C", "D"] }));
+    expect(dirs.some((d) => d.startsWith("D:\\"))).toBe(true);
+    expect(dirs.some((d) => /^[E-Z]:/.test(d))).toBe(false);
+    // Unknown disks: just C:, D: and E:.
+    expect(new Set(candidateInstallDirs("poe1", hints({ drives: null })).map((d) => d[0]))).toEqual(new Set(["C", "D", "E"]));
+  });
+
+  it("lists each Steam library once, whatever its case", async () => {
+    const r = await locateClientLog("poe1", null, deps({}, hints({ steamRoot: "c:/program files (x86)/steam", steamLibrariesVdf: VDF })));
+    expect(r.looked![1]).toBe("Steam libraries: C:\\Program Files (x86)\\Steam, K:\\Games\\SteamLib");
+  });
 });
+

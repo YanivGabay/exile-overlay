@@ -20,6 +20,14 @@ describe("local crash log", () => {
     expect(again[0]).toMatchObject({ where: "overlay page", version: "0.1.4" });
   });
 
+  it("counts an error repeating in a loop once", () => {
+    const log = new CrashLog(dir(), "0.1.4");
+    for (let i = 0; i < 50; i++) log.record({ where: "main process", message: "same", at: new Date(Date.UTC(2026, 10, 25, 10, 0, i)).toISOString() });
+    expect(log.list()).toHaveLength(1);
+    log.record({ where: "main process", message: "same", at: "2026-11-25T10:05:00.000Z" });
+    expect(log.list()).toHaveLength(2);
+  });
+
   it("never grows past the limit", () => {
     const log = new CrashLog(dir(), "0.1.4", 5);
     for (let i = 0; i < 12; i++) log.record({ where: "main process", message: `crash ${i}` });

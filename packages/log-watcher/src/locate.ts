@@ -82,6 +82,29 @@ export interface InstallHints {
   steamRoot: string | null;
   /** Contents of steamapps/libraryfolders.vdf, if readable. */
   steamLibrariesVdf: string | null;
+  /**
+   * Local fixed disks ("C", "D", …). Only these get the folder scan: checking a
+   * folder on a disconnected network drive can block for seconds, and the
+   * search repeats every few seconds until the game is found.
+   */
+  drives?: string[] | null;
+}
+
+/** Local fixed disks via PowerShell (DriveType 3); null if unknown. */
+export function listFixedDrives(): Promise<string[] | null> {
+  if (process.platform !== "win32") return Promise.resolve(null);
+  return new Promise((resolve) => {
+    execFile(
+      "powershell.exe",
+      ["-NoProfile", "-NonInteractive", "-Command", `Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | ForEach-Object { $_.DeviceID }`],
+      { windowsHide: true, timeout: 10_000 },
+      (err, stdout) => {
+        if (err) return resolve(null);
+        const drives = [...stdout.matchAll(/^([A-Z]):\s*$/gim)].map((m) => m[1].toUpperCase());
+        resolve(drives.length ? drives : null);
+      },
+    );
+  });
 }
 
 /** Reads one registry value with reg.exe (no native module). Null if missing. */
@@ -127,7 +150,7 @@ async function queryInstallHints(game: Game): Promise<InstallHints> {
       /* Steam installed but never ran, or no access */
     }
   }
-  return { standalone, steamRoot, steamLibrariesVdf };
+  return { standalone, steamRoot, steamLibrariesVdf, drives: await listFixedDrives() };
 }
 
 /**
@@ -145,7 +168,9 @@ export function candidateInstallDirs(game: Game, hints: InstallHints | null = nu
     ...(hints?.steamLibrariesVdf ? parseSteamLibraries(hints.steamLibrariesVdf) : []),
   ];
   for (const lib of libraries) add(win32.join(win32.normalize(lib), "steamapps", "common", name));
-  for (const drive of "CDEFGHIJ") {
+  // Unknown disks (PowerShell failed): the usual game drives only.
+  const drives = hints?.drives?.length ? hints.drives : ["C", "D", "E"];
+  for (const drive of drives) {
     const roots = drive === "C" ? ["C:\\Program Files (x86)", "C:\\Program Files", "C:\\"] : [`${drive}:\\`, `${drive}:\\Program Files (x86)`, `${drive}:\\Program Files`, `${drive}:\\Games`];
     for (const root of roots) {
       add(win32.join(root, "Steam", "steamapps", "common", name));
@@ -213,17 +238,16 @@ export async function locateClientLog(game: Game, manualPath: string | null, dep
   }
   const hints = await deps.hints(game).catch(() => null);
   const searched = candidateInstallDirs(game, hints);
-  const libraries = [
-    ...new Set(
-      [...(hints?.steamRoot ? [hints.steamRoot] : []), ...(hints?.steamLibrariesVdf ? parseSteamLibraries(hints.steamLibrariesVdf) : [])].map((l) =>
-        win32.normalize(l),
-      ),
-    ),
-  ];
+  // Windows paths ignore case: Steam's registry entry is often lower case, the vdf isn't (keep the vdf's).
+  const libraries: string[] = [];
+  for (const l of [...(hints?.steamLibrariesVdf ? parseSteamLibraries(hints.steamLibrariesVdf) : []), ...(hints?.steamRoot ? [hints.steamRoot] : [])]) {
+    const n = win32.normalize(l);
+    if (!libraries.some((x) => x.toLowerCase() === n.toLowerCase())) libraries.push(n);
+  }
   const looked = [
     hints?.standalone.length ? `The standalone client's folder from Windows: ${hints.standalone.join(", ")}` : "No standalone client registered in Windows",
     libraries.length ? `Steam libraries: ${libraries.join(", ")}` : "No Steam install found",
-    "The usual game folders on drives C: to J:",
+    `The usual game folders on ${(hints?.drives?.length ? hints.drives : ["C", "D", "E"]).map((d) => `${d}:`).join(", ")}`,
   ];
   // Several installs (say Steam and standalone): the one written to most recently is the one you play.
   const found = searched

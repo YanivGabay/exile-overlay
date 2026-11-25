@@ -10,7 +10,7 @@ const base = (over: { game?: Partial<AppState["game"]>; attached?: boolean } = {
   game: { logStatus: { kind: "searching" }, inGame: null, area: null, character: null, ...over.game },
 });
 const watching = { kind: "watching" as const, path: "C:\\Games\\Path of Exile\\logs\\Client.txt", sizeBytes: 1000 };
-const LOOKED = ["No standalone client registered in Windows", "Steam libraries: C:\\Program Files (x86)\\Steam", "The usual game folders on drives C: to J:"];
+const LOOKED = ["No standalone client registered in Windows", "Steam libraries: C:\\Program Files (x86)\\Steam", "The usual game folders on C:, D:"];
 
 describe("connection status for a new player", () => {
   it("before the game runs: waiting, nothing to do", () => {

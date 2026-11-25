@@ -67,7 +67,7 @@ Many keyboards send special functions from the F-key row unless you hold **Fn** 
 Click the small **–** tab on the top edge of Gem links, Passive tree or Vendor search to fold it to a tab; click the tab to open it again. To hide a panel completely, use **Hide** in edit mode (F6) or untick it under Settings → Overlay.
 
 **It says it can't find the game log (Client.txt).**
-It's found automatically: from the running game, the standalone client's install folder in Windows, every Steam library, and the usual game folders on drives C: to J:. If it still isn't found, the Setup screen lists where it looked; choose `logs\Client.txt` in the game folder with **Choose Client.txt…**:
+It's found automatically: from the running game, the standalone client's install folder in Windows, every Steam library, and the usual game folders on your local drives. If it still isn't found, the Setup screen lists where it looked; choose `logs\Client.txt` in the game folder with **Choose Client.txt…**:
 - Steam: `…\steamapps\common\Path of Exile\logs\Client.txt`
 - Standalone: `C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt`
 

@@ -40,7 +40,11 @@ export class CrashLog {
 
   record(entry: Omit<CrashEntry, "at" | "version"> & { at?: string }): CrashEntry {
     const full: CrashEntry = { at: entry.at ?? new Date().toISOString(), version: this.version, where: entry.where, message: entry.message, stack: entry.stack };
-    const next = [full, ...this.list()].slice(0, this.max);
+    const prev = this.list();
+    // The same error repeating (an error thrown in a loop) is one entry, not a disk write per throw.
+    const last = prev[0];
+    if (last && last.where === full.where && last.message === full.message && Date.parse(full.at) - Date.parse(last.at) < 60_000) return last;
+    const next = [full, ...prev].slice(0, this.max);
     try {
       writeFileSync(`${this.file}.tmp`, JSON.stringify(next, null, 1));
       renameSync(`${this.file}.tmp`, this.file);

@@ -51,7 +51,7 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
             processes: [],
             detail: "Automatic detection is off (test run).",
             // What a PC without the game shows.
-            looked: ["No standalone client registered in Windows", "No Steam install found", "The usual game folders on drives C: to J:"],
+            looked: ["No standalone client registered in Windows", "No Steam install found", "The usual game folders on C:, D:"],
           }
         : await locateClientLog("poe1", manual);
     this.lastDetail = result.detail;
