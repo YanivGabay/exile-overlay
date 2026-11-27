@@ -1,0 +1,362 @@
+{
+ "3.26.0": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 11:20:55 1226406 890d9d96 [INFO Client 14980] Async connecting to mil.login.pathofexile.com:20491"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 11:20:55 1226421 890d9d13 [INFO Client 14980] Connected to mil.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 11:21:07 1238296 5570c0fc [INFO Client 14980] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 11:21:11 1242453 ca3a6990 [INFO Client 14980] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 11:21:14 1244875 cff945b9 [INFO Client 14980] : You have entered Oriath Docks."
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 16:57:39 ***** LOG FILE OPENING *****"
+  }
+ ],
+ "3.27.0": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 19:49:10 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 19:50:49 167568343 890d9d96 [INFO Client 3604] Async connecting to mil.login.pathofexile.com:20491"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 19:50:49 167568359 890d9d13 [INFO Client 3604] Connected to mil.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 21:20:47 172966781 ca3a6b17 [INFO Client 12844] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 21:20:48 172966921 1186a8e1 [DEBUG Client 12844] Generating level 1 area \"1_1_1\" with seed 2590699713"
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 21:20:49 172967953 cff945bb [INFO Client 12844] : You have entered The Twilight Strand."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 21:21:58 173037468 cff945bb [INFO Client 12844] : Tester_One (Ranger) is now level 2"
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 22:00:35 175354093 cff945bb [INFO Client 12844] : Tester_One has been slain."
+  },
+  {
+   "expect": "resistPenalty",
+   "line": "2026/11/02 00:50:15 185534093 cff945bb [INFO Client 12844] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."
+  },
+  {
+   "expect": "campaignComplete",
+   "line": "2026/11/02 10:19:48 27207406 cff945bb [INFO Client 6676] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 18:23:06 401804890 5570c13e [INFO Client 22012] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 20:02:51 1794102562 587dda06 [CRIT Client 20088] Disconnected from patching server before patching completed. Try again"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 11:30:50 31468968 cff945bb [INFO Client 6676] : Friend_One has joined the area."
+  }
+ ],
+ "3.28.0": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 18:42:35 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 18:50:54 468370312 890d9dbc [INFO Client 28224] Async connecting to mil.login.pathofexile.com:20491"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 18:50:54 468370343 890d9d3b [INFO Client 28224] Connected to mil.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 18:50:54 468370437 5570c13e [INFO Client 28224] Abnormal disconnect: The realm is currently down for maintenance. Try again later."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 21:02:08 476244828 ca3a6b7e [INFO Client 28224] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 21:02:08 476244890 1186a886 [DEBUG Client 28224] Generating level 1 area \"1_1_1\" with seed 3008448499"
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 21:02:09 476245671 cffb06dd [INFO Client 28224] : You have entered The Twilight Strand."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 21:03:27 476323468 cffb06dd [INFO Client 28224] : Tester_One (Duelist) is now level 2"
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 21:14:33 476989546 cffb06dd [INFO Client 28224] : Tester_One has been slain."
+  },
+  {
+   "expect": "resistPenalty",
+   "line": "2026/11/02 00:57:08 490344765 cffb06dd [INFO Client 17656] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."
+  },
+  {
+   "expect": "campaignComplete",
+   "line": "2026/11/02 12:31:05 531981750 cffb06dd [INFO Client 1716] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 19:00:58 139459734 587de5a6 [CRIT Client 20532] Disconnected from patching server before patching completed. Try again"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 13:56:41 537117812 cffb06dd [INFO Client 1716] : Friend_One has joined the area."
+  }
+ ],
+ "3.29.0": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 21:24:06 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 21:50:11 454195500 890d9dbe [INFO Client 29940] Async connecting to mil.login.pathofexile.com:20491"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 21:50:11 454195515 890d9d12 [INFO Client 29940] Connected to mil.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 21:50:11 454195609 5570c139 [INFO Client 29940] Abnormal disconnect: The realm is currently down for maintenance. Try again later."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 23:08:15 458879968 587de547 [CRIT Client 11784] Disconnected from patching server before patching completed. Try again"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 23:27:46 460051015 ca3a6b7d [INFO Client 23284] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 23:27:47 460051093 1186a8a3 [DEBUG Client 23284] Generating level 1 area \"1_1_1\" with seed 2224155903"
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 23:27:48 460052187 cffb0658 [INFO Client 23284] : You have entered The Twilight Strand."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 23:29:09 460133312 cffb0658 [INFO Client 23284] : Tester_One (Witch) is now level 2"
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 23:59:09 461933703 cffb0658 [INFO Client 23284] : Tester_One has been slain."
+  },
+  {
+   "expect": "resistPenalty",
+   "line": "2026/11/02 02:11:40 469884218 cffb0658 [INFO Client 23284] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."
+  },
+  {
+   "expect": "campaignComplete",
+   "line": "2026/11/02 05:14:43 480868015 cffb0658 [INFO Client 30420] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 23:41:51 460895968 cffb0658 [INFO Client 23284] : Friend_One has joined the area."
+  }
+ ],
+ "3.29.1": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 15:08:35 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 15:09:06 1034926312 890d9dbe [INFO Client 19628] Async connecting to lon.login.pathofexile.com:20487"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 15:09:06 1034926328 890d9d12 [INFO Client 19628] Connected to lon.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 15:09:09 1034928953 ca3a6b7d [INFO Client 19628] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 15:09:09 1034929125 1186a8a3 [DEBUG Client 19628] Generating level 23 area \"1_2_town\" with seed 1"
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 15:09:10 1034930234 cffb065b [INFO Client 19628] : You have entered The Forest Encampment."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 16:13:02 1038762296 cffb065b [INFO Client 19628] : Tester_One (Necromancer) is now level 94"
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 16:15:10 1038890437 cffb065b [INFO Client 19628] : Tester_One has been slain."
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 20:29:08 187222843 5570c139 [INFO Client 13528] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 18:24:31 6947437 cffb065b [INFO Client 15960] : Friend_One has joined the area."
+  }
+ ],
+ "3.29.2": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 16:33:51 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 16:34:11 161362359 890d9dbc [INFO Client 18908] Async connecting to lon.login.pathofexile.com:20487"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 16:34:11 161362437 890d9d3b [INFO Client 18908] Connected to lon.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 16:34:13 161364796 ca3a6b7d [INFO Client 18908] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 16:34:15 161365921 cffb065b [INFO Client 18908] : You have entered Oriath Docks."
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 23:28:32 186221765 cffb065b [INFO Client 25156] : Tester_One has been slain."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 22:46:42 442910390 cffb065b [INFO Client 18100] : Tester_One (Necromancer) is now level 97"
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 22:38:32 183222000 cffb065b [INFO Client 25156] : Friend_One has joined the area."
+  }
+ ],
+ "3.29.3": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 09:39:43 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 09:41:13 827781390 890d9dbc [INFO Client 27184] Async connecting to lon.login.pathofexile.com:20487"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 09:41:13 827781468 890d9d3b [INFO Client 27184] Connected to lon.login.pathofexile.com in 15ms."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 09:41:15 827783578 ca3a6b7d [INFO Client 27184] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 09:41:16 827785078 cffb065b [INFO Client 27184] : You have entered Oriath Docks."
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 20:06:17 77412062 cffb065b [INFO Client 24068] : Tester_One has been slain."
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 18:46:35 433180406 1186a8a3 [DEBUG Client 22848] Generating level 1 area \"1_1_1\" with seed 2374563146"
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 18:48:31 433296406 cffb065b [INFO Client 22848] : Tester_One (Marauder) is now level 2"
+  },
+  {
+   "expect": "resistPenalty",
+   "line": "2026/11/02 19:15:23 395039500 cffb065b [INFO Client 29372] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."
+  },
+  {
+   "expect": "campaignComplete",
+   "line": "2026/11/02 18:41:04 479380281 cffb065b [INFO Client 24904] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 19:07:52 1092912875 aeceb036 [INFO Client 27964] Abnormal disconnect: Game server lost contact with the realm."
+  }
+ ],
+ "3.30.0": [
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 20:17:49 ***** LOG FILE OPENING *****"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 20:20:53 170329328 890d9dbe [INFO Client 14784] Async connecting to lon.login.pathofexile.com:20487"
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 20:20:53 170329406 890d9d12 [INFO Client 14784] Connected to lon.login.pathofexile.com in 0ms."
+  },
+  {
+   "expect": null,
+   "line": "2026/11/02 21:10:42 173318406 ca3a6b79 [INFO Client 14784] Connecting to instance server at 192.0.2.1:6112 "
+  },
+  {
+   "expect": "areaGenerated",
+   "line": "2026/11/02 21:10:42 173318546 1186a803 [DEBUG Client 14784] Generating level 1 area \"1_1_1\" with seed 1038744806"
+  },
+  {
+   "expect": "areaEntered",
+   "line": "2026/11/02 21:10:43 173319484 cffb06be [INFO Client 14784] : You have entered The Twilight Strand."
+  },
+  {
+   "expect": "levelUp",
+   "line": "2026/11/02 21:11:57 173393203 cffb06be [INFO Client 14784] : Tester_One (Witch) is now level 2"
+  },
+  {
+   "expect": "death",
+   "line": "2026/11/02 23:17:09 180905015 cffb06be [INFO Client 14784] : Tester_One has been slain."
+  },
+  {
+   "expect": "resistPenalty",
+   "line": "2026/11/02 00:37:11 185706937 cffb06be [INFO Client 14784] : You have been permanently weakened by Kitava's cruel affliction. You now have -30% to all Resistances."
+  },
+  {
+   "expect": "campaignComplete",
+   "line": "2026/11/02 03:28:53 196008937 cffb06be [INFO Client 14784] Sin: May a new dawn arise!"
+  },
+  {
+   "expect": "outOfGame",
+   "line": "2026/11/02 14:33:22 322276937 5570c138 [INFO Client 6680] Abnormal disconnect: An unexpected disconnection occurred."
+  },
+  {
+   "expect": "otherPlayer",
+   "line": "2026/11/02 03:55:11 197586953 cffb06be [INFO Client 14784] : Friend_One has joined the area."
+  }
+ ]
+}

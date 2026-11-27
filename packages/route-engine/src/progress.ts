@@ -376,7 +376,12 @@ export interface CharacterCandidate {
   progress: GuideProgress;
   /** ISO time, used to break ties (most recently played wins). */
   lastSeen: string;
+  /** Last known level; a high-level character is not the one starting the campaign. */
+  level?: number | null;
 }
+
+/** Nobody leaves The Twilight Strand above this level, so such a character entering it is a new one. */
+const STRAND_MAX_LEVEL = 12;
 
 /**
  * After a login, the log doesn't say which character was picked. Guess it
@@ -389,21 +394,40 @@ export function matchCharacter(
   candidates: CharacterCandidate[],
   areaId: string,
   ctx: TrackContext,
+  /** The character you last played (confirmed by a level-up): kept after a relog if the zone fits it at all. */
+  prefer: string | null = null,
+  /** Now (ISO, game time): a rival played in the last two days is a real switch, not a stale character. */
+  now: string | null = null,
 ): string | "new" | null {
   const act = ctx.actOf?.(areaId);
   let best: { name: string; score: number; lastSeen: string } | null = null;
+  let preferredScore = 0;
+  const scored: { score: number; lastSeen: string }[] = [];
   for (const c of candidates) {
+    // An endgame character the overlay never tracked through the campaign sits at
+    // step 0; it must not claim a fresh character's Twilight Strand.
+    if (areaId === guide.edges[0] && (c.level ?? 0) > STRAND_MAX_LEVEL) continue;
     const p = Math.min(c.progress.activeEdge, guide.edges.length - 1);
     let score = 0;
     if (guide.edges[p] === areaId) score = 4;
     else if (guide.edges[p + 1] === areaId) score = 3;
     else if (act !== undefined && act === ctx.actOf?.(guide.edges[p])) score = 2;
     else if (act !== undefined && act === (ctx.actOf?.(guide.edges[p]) ?? -9) + 1) score = 1;
+    if (c.name === prefer) preferredScore = score;
+    else scored.push({ score, lastSeen: c.lastSeen });
     if (score === 0) continue;
     if (!best || score > best.score || (score === best.score && c.lastSeen > best.lastSeen)) {
       best = { name: c.name, score, lastSeen: c.lastSeen };
     }
   }
   if (areaId === guide.edges[0] && (!best || best.score < 4)) return "new";
+  // Relogs (instance resets, disconnects) far outnumber character switches, and the
+  // guide can trail a few zones behind: an old character parked exactly on this
+  // town must not take over from the one you were just playing.
+  // Unless another character that fits better was played recently: then you're
+  // switching characters (two leveling characters at league start).
+  const recent = (t: string) => now !== null && Date.parse(now) - Date.parse(t) < 2 * 24 * 3600_000;
+  const recentRival = scored.some((r) => r.score > preferredScore && recent(r.lastSeen));
+  if (prefer && areaId !== guide.edges[0] && preferredScore > 0 && !recentRival) return prefer;
   return best?.name ?? null;
 }

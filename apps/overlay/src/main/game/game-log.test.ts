@@ -51,4 +51,36 @@ describe("GameLog", () => {
     expect(live).toEqual(["areaGenerated"]);
     gl.stop();
   });
+
+  it("hides on a disconnect, and a quick double restart never tails the log twice", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "eo-gamelog-"));
+    const log = join(dir, "Client.txt");
+    writeFileSync(log, '2026/11/02 20:12:05 1 a [DEBUG Client 1] Generating level 13 area "1_1_town" with seed 1\r\n');
+    const settings = { ...structuredClone(DEFAULT_SETTINGS), game: { ...DEFAULT_SETTINGS.game, clientLogPath: log } };
+    const state = new AppStateStore(
+      {
+        appVersion: "t",
+        settings,
+        overlay: { attached: true, targetFocused: true, bounds: null, editing: false, hidden: false },
+        game: { logStatus: { kind: "searching" }, inGame: null, area: null, character: null },
+        guide: { state: "loading", source: null, version: null, gameVersion: null, title: null, message: null },
+        tracking: null,
+      },
+      SettingsStore.inDir(dir),
+    );
+    const gl = new GameLog(state);
+    const live: string[] = [];
+    gl.on("event", (e, replay) => !replay && live.push(e.type));
+    await gl.start();
+    // Settings change twice while the first restart is still looking for the log.
+    void gl.restart();
+    await gl.restart();
+    await wait(50);
+    appendFileSync(log, "2026/11/02 20:13:00 1 a [INFO Client 1] Abnormal disconnect: An unexpected disconnection occurred.\r\n");
+    await wait(600);
+    expect(state.get().game.inGame).toBe(false);
+    expect(live).toEqual(["outOfGame"]);
+    gl.stop();
+  });
 });
+

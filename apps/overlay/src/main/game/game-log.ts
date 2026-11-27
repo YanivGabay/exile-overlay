@@ -13,6 +13,8 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
   private tailer: LogTailer | null = null;
   private retry: NodeJS.Timeout | null = null;
   private stopped = false;
+  /** Bumped by stop(); a connect() from before a restart must not start a second tailer. */
+  private generation = 0;
   lastDetail = "";
 
   constructor(private readonly state: AppStateStore) {
@@ -29,9 +31,11 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
 
   stop() {
     this.stopped = true;
+    this.generation++;
     this.tailer?.stop();
     this.tailer = null;
     if (this.retry) clearTimeout(this.retry);
+    this.retry = null;
   }
 
   async restart() {
@@ -42,12 +46,14 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
 
   private async connect() {
     if (this.stopped) return;
+    const gen = this.generation;
     const manual = this.state.settings.game.clientLogPath;
     // Test hook: behave like a machine where the game was never installed or started.
     const result =
       process.env.EXILE_OVERLAY_NO_AUTODETECT && !manual
         ? { logPath: null, processes: [], detail: "Automatic detection is off (test run)." }
         : await locateClientLog("poe1", manual);
+    if (gen !== this.generation) return;
     this.lastDetail = result.detail;
     if (!result.logPath) {
       this.state.set("game", { ...this.state.get().game, logStatus: { kind: "searching" } });
@@ -58,16 +64,22 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
     const tailer = new LogTailer(result.logPath);
     tailer.on("lines", (lines, replay) => this.onLines(lines, replay));
     tailer.on("error", (err) => {
+      if (gen !== this.generation) return;
       this.state.patch({ game: { logStatus: { kind: "error", message: err.message } } });
       tailer.stop();
       this.tailer = null;
       this.retry = setTimeout(() => void this.connect(), RETRY_MS);
     });
     try {
-      await tailer.start();
+      // Set before start() so a stop() during the replay read reaches this tailer.
       this.tailer = tailer;
+      await tailer.start();
+      if (gen !== this.generation) return tailer.stop();
       this.updateWatching();
     } catch (err) {
+      tailer.stop();
+      if (this.tailer === tailer) this.tailer = null;
+      if (gen !== this.generation) return;
       this.state.patch({ game: { logStatus: { kind: "error", message: (err as Error).message } } });
       this.retry = setTimeout(() => void this.connect(), RETRY_MS);
     }
@@ -91,6 +103,8 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
       // Only the latest area and level-up matter when catching up.
       const lastArea = events.findLast((e) => e.type === "areaGenerated");
       const lastLevel = events.findLast((e) => e.type === "levelUp");
+      // Other players seen in the window first, so a party member's level-up isn't taken for yours.
+      for (const e of events) if (e.type === "otherPlayer") this.apply(e, true);
       for (const e of [lastLevel, lastArea]) if (e) this.apply(e, true);
       // Whichever came last decides whether we are in a zone or at character select.
       const lastPresence = events.findLast((e) => e.type === "areaGenerated" || e.type === "outOfGame");

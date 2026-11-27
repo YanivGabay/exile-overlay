@@ -6,6 +6,8 @@ Every step that publishes something (a release, a push to the guides repo's `mai
 
 - [ ] Check the route, tips and reminders against the patch notes (see [launch-day-checklist.md](launch-day-checklist.md)), then refresh `guides-snapshot/poe1.json` and its `gameVersion`.
 - [ ] Re-run the accuracy gate: `scripts/validate-runs.ts` on a real Client.txt plus `packages/route-engine/test-fixtures/real-runs.json`.
+- [ ] After a game patch, check the log format: `npx tsx scripts/survey-log.ts <Client.txt>` counts events per game version and lists lines that look like events but didn't parse. Add a line per event type from the new patch to `packages/log-watcher/test-fixtures/patch-lines.json`.
+- [ ] Soak the log pipeline: `node --expose-gc --import tsx scripts/soak-log.ts <Client.txt>` streams a real log through tailer, tracking and timer; heap should stay flat.
 
 ## Build
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareSplit, formatDuration, liveElapsed, logTimeToMs, MAX_GAP_MS, newTimer, pause, tick } from "./timer.js";
+import { addDeath, compareSplit, finish, formatDuration, liveElapsed, logTimeToMs, MAX_GAP_MS, newTimer, pause, tick } from "./timer.js";
 
 describe("timer", () => {
   it("ignores breaks longer than the max gap", () => {
@@ -93,5 +93,14 @@ describe("paceAgainstBest", () => {
     const t = mk({ 1: 0, 2: 28 * M, 3: 55 * M }, 70 * M);
     expect(paceAgainstBest(t, [best], "Me", 0)).toEqual(paceAgainstBest(structuredClone(t), [best], "Me", 0));
     expect(paceText({ act: 3, deltaMs: 400, kind: "split" })).toBe("even with your best in Act 3");
+  });
+});
+
+describe("finished run", () => {
+  it("stops counting deaths once the campaign is done", () => {
+    let t = newTimer(0, true, 1);
+    t = addDeath(tick(t, 1000), 1);
+    t = finish(t, 2000);
+    expect(addDeath(t, 10).deaths).toBe(1);
   });
 });
