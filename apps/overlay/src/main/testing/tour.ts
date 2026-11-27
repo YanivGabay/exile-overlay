@@ -7,7 +7,8 @@ import type { AppStateStore } from "../state/app-state.js";
 /**
  * UI review hook (EXILE_OVERLAY_TOUR=<dir>): offscreen screenshots driven by
  * commands appended to <dir>/tour.txt. Never shows a window or touches focus.
- *   shot <label>             overlay at 1920x1080 and 2560x1440 over a busy, game-like background
+ *   shot <label>             overlay at 1920x1080 and 2560x1440 (see EXILE_OVERLAY_TOUR_SIZES) over a busy, game-like background
+ *   dump                     log each widget's box (stacking checks)
  *   edit on|off              layout edit mode
  *   settings <tab> <label>   the settings window on a tab
  *   attach <seconds-ago>     pretend the game window was found that long ago (off: detach)
@@ -16,10 +17,15 @@ import type { AppStateStore } from "../state/app-state.js";
  *   crash main|overlay       throw in main / kill the overlay page, to check logging and recovery
  *   quit
  */
-const SIZES = [
+const ALL_SIZES = [
+  { name: "720", width: 1280, height: 720 },
   { name: "1080", width: 1920, height: 1080 },
   { name: "1440", width: 2560, height: 1440 },
+  { name: "uw", width: 3440, height: 1440 },
 ];
+// EXILE_OVERLAY_TOUR_SIZES=720,1080,1440,uw picks others; default 1080 and 1440.
+const wanted = (process.env.EXILE_OVERLAY_TOUR_SIZES ?? "1080,1440").split(",");
+const SIZES = ALL_SIZES.filter((s) => wanted.includes(s.name));
 
 // Bright spell effects, fire and dark ground: a stand-in for busy game art.
 const GAME_ART = `html { background:
@@ -63,6 +69,15 @@ export function startTour(dir: string, state: AppStateStore, hooks: { crashMain:
           const { width, height } = img.getSize();
           if (width !== w.width || height !== w.height) console.warn(`[tour] ${w.name} rendered at ${width}x${height}, not ${w.width}x${w.height}`);
           writeFileSync(join(dir, `${cmd[1]}-${w.name}.png`), img.toPNG());
+        }
+        break;
+      case "dump":
+        // Widget boxes as laid out, for checking stacking: id, top, height, body scroll/client height.
+        for (const w of windows) {
+          const boxes = await w.win.webContents.executeJavaScript(
+            `JSON.stringify([...document.querySelectorAll("section.widget[data-widget]")].map((e) => { const b = e.querySelector(".widget-body"); const r = e.getBoundingClientRect(); return [e.dataset.widget, Math.round(r.top), Math.round(r.bottom), b ? b.scrollHeight : 0, b ? b.clientHeight : 0, getComputedStyle(b || e).maxHeight]; }))`,
+          );
+          console.log(`[tour] dump ${w.name} ${boxes}`);
         }
         break;
       case "edit":

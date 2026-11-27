@@ -31,6 +31,7 @@ All keys can be changed under Settings → Hotkeys. Settings opens from the tray
 - Each zone shows what to do and where to go next, and the guide moves on by itself as you change zones.
 - Your build's gems and links for your level, what to take from quests and what to buy, and which passive tree fits now.
 - A gem plan from your Path of Building, act by act: the reward to take from each quest and which gems to buy after it, from which vendor. The overlay shows the next quests; Settings → Guide & build shows every act.
+- The next 3 passive points to take for your level, from your Path of Building trees, in an order that walks to the nearest notable first, with a warning when you skipped quest points and a heads-up before a respec.
 - In town, vendor search text to copy in one click: links, movement speed boots, +1 wands, weapon recipe bases.
 - Reminders that matter: boots, weapon upgrades, level checks before big bosses, danger zones, Kitava's resistance penalty.
 - A campaign timer with act splits and live pace against your best run, plus a run summary to share at the end.

@@ -7,6 +7,7 @@ import type { Place } from "../layout/useStacking.js";
 import { Widget } from "../layout/Widget.js";
 import { GemLinks } from "./GemLinks.js";
 import { UpcomingGems } from "./GemPlan.js";
+import { NextPoints } from "./NextPoints.js";
 import { Interactive } from "../layout/Interactive.js";
 import type { GuideRender } from "../../../shared/guide-render.js";
 
@@ -172,13 +173,15 @@ export function BuildWidgets({
   const level = profile.level ?? state.game.character?.level ?? null;
   const here = state.game.area?.id ?? areaId;
   const inTown = guide.areas[here]?.isTown ?? false;
-  const questPoints = guide.campaign
+  const campaign = guide.campaign
     ? campaignStatus(guide, profile.progress, guide.campaign, {
         actOf: (id) => guide.areas[id]?.act,
         questName: (id) => guide.quests[id]?.name ?? id,
         killAllBandits: state.settings.guide.options.bandit === "None",
-      }).pointsDone
-    : 0;
+      })
+    : null;
+  const questPoints = campaign?.pointsDone ?? 0;
+  const hasTrees = (guide.build?.trees ?? []).some((t) => t.nodes?.length);
   const f = state.settings.features;
   return (
     <>
@@ -189,6 +192,11 @@ export function BuildWidgets({
           )}
           {f?.gemPlan !== false && <UpcomingGems guide={guide} act={act} progress={profile.progress} />}
           <GemLinks guide={guide} act={act} level={level} />
+        </Widget>
+      )}
+      {f?.points !== false && hasTrees && (
+        <Widget id="points" collapsible title="Next points" layout={layoutOf("points")} editing={editing} fade={fade("points")} place={places.points} onChange={(l) => save("points", l)}>
+          <NextPoints guide={guide} have={availablePoints(level, questPoints)} missed={campaign?.missed ?? []} />
         </Widget>
       )}
       {f?.tree !== false && (

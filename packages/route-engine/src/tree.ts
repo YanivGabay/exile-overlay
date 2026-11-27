@@ -5,10 +5,14 @@
  */
 import type { RouteData } from "./types.js";
 
-/** node id → [name, kind, stats?, ascendancy?]; kind: k keystone, n notable, a asc notable, s small, m mastery, j jewel, x asc small */
+/** node id → [name, kind, stats?, ascendancy?]; kind: k keystone, n notable, a asc notable, s small, m mastery, j jewel, x asc small, c class start */
 export interface TreeTable {
   version: string;
   nodes: Record<string, [string, string, string[]?, string?] | (string | string[])[]>;
+  /** Class name → its start node (bundles from 2026-11-24 on). */
+  starts?: Record<string, string>;
+  /** Connected non-ascendancy nodes as flat pairs [a, b, a, b, ...] (bundles from 2026-11-24 on). */
+  links?: number[];
 }
 
 /**
@@ -81,7 +85,7 @@ const info = (table: TreeTable, id: string): NodeInfo | null => {
 const regularPoints = (table: TreeTable, nodes: string[]) =>
   nodes.filter((id) => {
     const k = table.nodes[id]?.[1];
-    return k !== undefined && k !== "a" && k !== "x";
+    return k !== undefined && k !== "a" && k !== "x" && k !== "c";
   }).length;
 
 export function treeStep(
