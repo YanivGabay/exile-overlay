@@ -10,6 +10,19 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "0.1.4",
+    date: "2026-11-24",
+    items: [
+      "Next points: with a Path of Building build imported, a small panel shows the next three passive points to take for your level, in order, and which notable or keystone each one leads to. It names any skipped quests that give points, and tells you what to refund when your build swaps trees.",
+      "League starts now count as full runs, so your campaign time, personal best and pace work from the first run with a new character.",
+      "A disconnect hides the overlay and pauses the timer straight away, instead of up to a minute later.",
+      "The guide stays on your character when you play in a party or relog often: a friend's level-up, or an old character parked in the same town, no longer takes over.",
+      "Panels stack without covering each other on any screen size, and a long gem list gives way to the panels below it.",
+      "Deaths in maps no longer add to your finished campaign's death count.",
+      "Steadier with very long play sessions and huge log files.",
+    ],
+  },
+  {
     version: "0.1.3",
     date: "2026-11-20",
     items: [
