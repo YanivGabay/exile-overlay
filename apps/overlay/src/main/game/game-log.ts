@@ -51,12 +51,18 @@ export class GameLog extends EventEmitter<{ event: [LogEvent, boolean] }> {
     // Test hook: behave like a machine where the game was never installed or started.
     const result =
       process.env.EXILE_OVERLAY_NO_AUTODETECT && !manual
-        ? { logPath: null, processes: [], detail: "Automatic detection is off (test run)." }
+        ? {
+            logPath: null,
+            processes: [],
+            detail: "Automatic detection is off (test run).",
+            // What a PC without the game shows.
+            looked: ["No standalone client registered in Windows", "No Steam install found", "The usual game folders on C:, D:"],
+          }
         : await locateClientLog("poe1", manual);
     if (gen !== this.generation) return;
     this.lastDetail = result.detail;
     if (!result.logPath) {
-      this.state.set("game", { ...this.state.get().game, logStatus: { kind: "searching" } });
+      this.state.set("game", { ...this.state.get().game, logStatus: { kind: "searching", looked: result.looked } });
       this.retry = setTimeout(() => void this.connect(), RETRY_MS);
       return;
     }

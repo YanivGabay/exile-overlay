@@ -79,6 +79,13 @@ export class GuideService extends EventEmitter<{ guide: [GuideRender] }> {
         this.recompile();
       if (next.guide.bundleUrl !== prev.guide.bundleUrl) void this.checkRemote();
     });
+    // Name the zone you're in from the guide data when the log didn't (on startup only
+    // the zone's id is replayed; the English "You have entered" line may be missing).
+    state.on("change", (st) => {
+      const area = st.game.area;
+      const name = area && !area.name ? this.bundle?.data.Areas[area.id]?.name : undefined;
+      if (area && name) this.state.set("game", { ...st.game, area: { ...area, name } });
+    });
   }
 
   start() {

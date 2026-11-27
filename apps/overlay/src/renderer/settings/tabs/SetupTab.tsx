@@ -3,7 +3,7 @@ import { useNow } from "../../common/hooks.js";
 import { logHelp } from "../../../shared/log-help.js";
 import type { AppState } from "../../../shared/types.js";
 import { Check } from "../components/Check.js";
-import { PickLogButton } from "../components/PickLogButton.js";
+import { ConnectionBanner } from "../components/ConnectionBanner.js";
 import { PobImport } from "../components/PobImport.js";
 import { PresetPicker } from "../components/PresetPicker.js";
 
@@ -18,6 +18,7 @@ export function SetupTab({ state, onDone }: { state: AppState; onDone: () => voi
         Exile Overlay shows a leveling guide on top of Path of Exile and moves to the next step when you change zones.
         There is nothing to calibrate. These checks update live:
       </p>
+      <ConnectionBanner state={state} />
       <div className="checks">
         <Check ok={overlay.attached ? true : null}>
           <strong>Game window</strong>
@@ -26,18 +27,6 @@ export function SetupTab({ state, onDone }: { state: AppState; onDone: () => voi
               ? `Found "${state.settings.game.targetTitle}" (${overlay.bounds?.width}×${overlay.bounds?.height}).`
               : `Start Path of Exile in Windowed or Windowed Fullscreen mode. Exclusive fullscreen hides overlays.`}
           </div>
-        </Check>
-        <Check ok={help.ok}>
-          <strong>Game log: {help.title.replace(/^Game log /, "").replace(/^./, (c) => c.toLowerCase())}</strong>
-          <div className="muted small">{help.detail}</div>
-          {help.offerPicker && (
-            <div className="row" style={{ marginTop: 6 }}>
-              <PickLogButton primary />
-              {state.settings.game.clientLogPath && (
-                <button onClick={() => void updateSettings({ game: { clientLogPath: null } })}>Detect automatically</button>
-              )}
-            </div>
-          )}
         </Check>
         <Check ok={guide.state === "ready" ? true : guide.state === "error" ? false : null}>
           <strong>Guide</strong>

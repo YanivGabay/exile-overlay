@@ -5,6 +5,7 @@ import type { GuideService } from "./guide/guide-service.js";
 import { importPob } from "./guide/pob.js";
 import type { AppStateStore } from "./state/app-state.js";
 import type { AppLog } from "./support/app-log.js";
+import type { CrashLog } from "./support/crash-log.js";
 import type { Updates } from "./support/updates.js";
 import type { OverlayWindow } from "./windows/overlay-window.js";
 import { openSettingsWindow } from "./windows/windows.js";
@@ -15,13 +16,15 @@ export interface CommandDeps {
   overlay: OverlayWindow;
   updates: Updates;
   appLog: AppLog;
-  makeReport: () => string;
+  /** A support report, optionally about one error (a crash from the local crash log). */
+  makeReport: (error?: { message: string; stack?: string; where: string } | null) => string;
+  crashLog: CrashLog;
   /** Click test: clipboard writes are recorded here instead of overwriting the user's clipboard. */
   clickTest: string[] | null;
 }
 
 /** Handles every command a renderer sends over IPC (see `Command` in shared/types). */
-export function createCommandHandler({ state, guide, overlay, updates, appLog, makeReport, clickTest }: CommandDeps) {
+export function createCommandHandler({ state, guide, overlay, updates, appLog, makeReport, crashLog, clickTest }: CommandDeps) {
   return async (e: IpcMainInvokeEvent, cmd: Command) => {
     if (cmd.type !== "setRegions") console.log(`[cmd] ${cmd.type}`);
     switch (cmd.type) {
@@ -103,6 +106,21 @@ export function createCommandHandler({ state, guide, overlay, updates, appLog, m
         return { ok: true };
       case "logError":
         appLog.write("error", `${cmd.where}: ${cmd.stack ?? cmd.message}`);
+        crashLog.record({ where: cmd.where, message: cmd.message, stack: cmd.stack });
+        return { ok: true };
+      case "copyCrashReport": {
+        // Local only: copies a report about one crash; the player pastes it where they like.
+        const crash = crashLog.list().find((c) => c.at === cmd.at);
+        if (!crash) return { ok: false, error: "That crash is no longer in the list." };
+        const report = makeReport({ where: `${crash.where} (${crash.at}, version ${crash.version})`, message: crash.message, stack: crash.stack });
+        if (clickTest) {
+          clickTest.push("report");
+          console.log(`[test] would copy a ${report.length}-character crash report`);
+        } else clipboard.writeText(report);
+        return { ok: true };
+      }
+      case "clearCrashes":
+        crashLog.clear();
         return { ok: true };
       case "copyReport":
         if (clickTest) clickTest.push("report");
